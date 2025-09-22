@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Map, Megaphone, Droplets } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
@@ -81,7 +82,9 @@ const Index = () => {
           <p className="text-muted-foreground">
             See waterlogging or a blocked drain? Let us know.
           </p>
-          <Button>Report an Issue</Button>
+          <Button asChild>
+            <Link to="/report">Report an Issue</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>
