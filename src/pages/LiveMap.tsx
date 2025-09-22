@@ -6,6 +6,7 @@ import { AlertCircle } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import MarkerClusterGroup from "react-leaflet-markercluster";
 
 // This is a common fix for an issue with react-leaflet and webpack
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -90,21 +91,23 @@ const LiveMap = () => {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {issues.map((issue) => (
-                  <Marker key={issue.id} position={[issue.lat, issue.lng]}>
-                    <Popup>
-                      <div className="font-bold capitalize">
-                        {issue.issue_type.replace("-", " ")}
-                      </div>
-                      <div className="text-sm">{issue.location}</div>
-                      {issue.description && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {issue.description}
-                        </p>
-                      )}
-                    </Popup>
-                  </Marker>
-                ))}
+                <MarkerClusterGroup>
+                  {issues.map((issue) => (
+                    <Marker key={issue.id} position={[issue.lat, issue.lng]}>
+                      <Popup>
+                        <div className="font-bold capitalize">
+                          {issue.issue_type.replace("-", " ")}
+                        </div>
+                        <div className="text-sm">{issue.location}</div>
+                        {issue.description && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {issue.description}
+                          </p>
+                        )}
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MarkerClusterGroup>
               </MapContainer>
             )}
           </div>

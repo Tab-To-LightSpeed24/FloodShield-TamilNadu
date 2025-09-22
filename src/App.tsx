@@ -10,6 +10,7 @@ import ReportIssue from "./pages/ReportIssue";
 import LiveMap from "./pages/LiveMap";
 import Alerts from "./pages/Alerts";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import { useAuth } from "./contexts/AuthContext";
 import { Skeleton } from "./components/ui/skeleton";
 
@@ -50,6 +51,7 @@ const App = () => (
 
             <Route element={<ProtectedRoute />}>
               <Route path="/report" element={<ReportIssue />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES HERE */}

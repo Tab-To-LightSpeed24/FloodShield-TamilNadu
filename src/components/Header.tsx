@@ -1,4 +1,4 @@
-import { Shield, Menu, LogOut, LogIn } from "lucide-react";
+import { Shield, Menu, LogOut, LogIn, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -6,14 +6,44 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess } from "@/utils/toast";
+import { useQuery } from "@tanstack/react-query";
 
 const Header = () => {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const navigate = useNavigate();
+
+  const fetchProfile = async () => {
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("avatar_url, first_name")
+      .eq("id", user.id)
+      .single();
+    if (error) {
+      console.error("Error fetching profile for header:", error);
+      return null;
+    }
+    return data;
+  };
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile-header", user?.id],
+    queryFn: fetchProfile,
+    enabled: !!user,
+  });
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -50,10 +80,40 @@ const Header = () => {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {session ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.first_name || "User"} />
+                    <AvatarFallback>
+                      {profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4"/>}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{profile?.first_name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">
@@ -82,21 +142,6 @@ const Header = () => {
                       </Link>
                     </SheetClose>
                   ))}
-                   <div className="pt-4 border-t">
-                    {session ? (
-                      <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
-                        <LogOut className="h-5 w-5 mr-2" />
-                        Logout
-                      </Button>
-                    ) : (
-                      <SheetClose asChild>
-                        <Link to="/login" className="flex items-center w-full p-2 rounded-md transition-colors hover:bg-muted">
-                          <LogIn className="h-5 w-5 mr-2" />
-                          Login
-                        </Link>
-                      </SheetClose>
-                    )}
-                  </div>
                 </nav>
               </SheetContent>
             </Sheet>
