@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   issueType: z.string({
@@ -44,10 +45,20 @@ const ReportIssue = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Form Submitted:", values);
-    showSuccess("Issue reported successfully! Thank you.");
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const { issueType, location, description } = values;
+
+    const { error } = await supabase
+      .from("issues")
+      .insert([{ issue_type: issueType, location, description }]);
+
+    if (error) {
+      console.error("Error reporting issue:", error);
+      showError("Failed to submit report. Please try again.");
+    } else {
+      showSuccess("Issue reported successfully! Thank you.");
+      form.reset();
+    }
   }
 
   return (
@@ -143,7 +154,9 @@ const ReportIssue = () => {
                 <Button variant="outline" asChild>
                   <Link to="/">Cancel</Link>
                 </Button>
-                <Button type="submit">Submit Report</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Submitting..." : "Submit Report"}
+                </Button>
               </div>
             </form>
           </Form>
