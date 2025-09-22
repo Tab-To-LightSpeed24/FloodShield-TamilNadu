@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ShieldCheck } from "lucide-react";
+import IssueManagement from "@/components/admin/IssueManagement";
 
 const Admin = () => {
   return (
@@ -13,17 +14,9 @@ const Admin = () => {
           Manage site settings, user reports, and alerts.
         </p>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome, Admin!</CardTitle>
-          <CardDescription>
-            This is your central hub for managing the FloodShield application. More management tools will be added here soon.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>You have administrative privileges.</p>
-        </CardContent>
-      </Card>
+      
+      <IssueManagement />
+      
     </div>
   );
 };
