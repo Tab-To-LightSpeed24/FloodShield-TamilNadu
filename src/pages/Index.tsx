@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Map, Megaphone, Droplets } from "lucide-react";
 import { Link } from "react-router-dom";
+import RecentIssues from "@/components/RecentIssues";
 
 const Index = () => {
   return (
@@ -73,6 +74,8 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RecentIssues />
 
       <Card>
         <CardHeader>
