@@ -41,11 +41,11 @@ const fetchAllIssues = async (): Promise<Issue[]> => {
   }
 
   // NOTE: This is a placeholder for real geocoding.
-  // We are adding random coordinates around Chennai for visualization.
+  // We are adding random coordinates around Tamil Nadu for visualization.
   return data.map((issue) => ({
     ...issue,
-    lat: 13.0827 + (Math.random() - 0.5) * 0.2,
-    lng: 80.2707 + (Math.random() - 0.5) * 0.2,
+    lat: 11.1271 + (Math.random() - 0.5) * 4,
+    lng: 78.6569 + (Math.random() - 0.5) * 4,
   }));
 };
 
@@ -67,7 +67,7 @@ const LiveMap = () => {
           Live Flood Risk Map
         </h1>
         <p className="text-muted-foreground">
-          Real-time visualization of reported issues across Chennai.
+          Real-time visualization of reported issues across Tamil Nadu.
         </p>
       </div>
       <Card>
@@ -87,8 +87,8 @@ const LiveMap = () => {
             )}
             {issues && (
               <MapContainer
-                center={[13.0827, 80.2707]}
-                zoom={12}
+                center={[11.1271, 78.6569]}
+                zoom={7}
                 scrollWheelZoom={true}
                 style={{ height: "100%", width: "100%", borderRadius: "inherit" }}
               >

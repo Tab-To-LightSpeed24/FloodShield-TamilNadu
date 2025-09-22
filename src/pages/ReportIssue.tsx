@@ -127,7 +127,7 @@ const ReportIssue = () => {
                     <FormLabel>Location</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., Near T. Nagar bus depot"
+                        placeholder="e.g., Near Meenakshi Amman Temple, Madurai"
                         {...field}
                       />
                     </FormControl>

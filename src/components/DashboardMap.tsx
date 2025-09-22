@@ -31,11 +31,11 @@ const fetchAllIssuesForMap = async (): Promise<Issue[]> => {
   }
 
   // NOTE: This is a placeholder for real geocoding.
-  // We are adding random coordinates around Chennai for visualization.
+  // We are adding random coordinates around Tamil Nadu for visualization.
   return data.map((issue) => ({
     ...issue,
-    lat: 13.0827 + (Math.random() - 0.5) * 0.2,
-    lng: 80.2707 + (Math.random() - 0.5) * 0.2,
+    lat: 11.1271 + (Math.random() - 0.5) * 4,
+    lng: 78.6569 + (Math.random() - 0.5) * 4,
   }));
 };
 
@@ -65,8 +65,8 @@ const DashboardMap = () => {
   return (
     <div className="h-64 w-full rounded-md overflow-hidden">
       <MapContainer
-        center={[13.0827, 80.2707]}
-        zoom={11}
+        center={[11.1271, 78.6569]}
+        zoom={7}
         style={{ height: "100%", width: "100%" }}
         zoomControl={false}
         scrollWheelZoom={false}

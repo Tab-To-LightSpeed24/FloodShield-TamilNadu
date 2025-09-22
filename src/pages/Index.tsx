@@ -35,7 +35,7 @@ const Index = () => {
           FloodShield Dashboard
         </h1>
         <p className="text-muted-foreground">
-          Real-time flood risk and alerts for Chennai
+          Real-time flood risk and alerts for Tamil Nadu
         </p>
       </div>
 

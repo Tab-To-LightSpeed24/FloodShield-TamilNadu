@@ -34,7 +34,7 @@ const Header = () => {
         <div className="mr-4 flex items-center">
           <Shield className="h-6 w-6 mr-2 text-blue-600" />
           <Link to="/" className="font-bold text-lg">
-            FloodShield Chennai
+            FloodShield Tamil Nadu
           </Link>
         </div>
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1">
