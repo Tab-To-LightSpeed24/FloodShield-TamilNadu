@@ -29,6 +29,9 @@ import { MapPin } from "lucide-react";
 import { useState } from "react";
 import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const formSchema = z.object({
   issueType: z.string({
     required_error: "Please select an issue type.",
@@ -37,7 +40,13 @@ const formSchema = z.object({
     .string()
     .min(5, { message: "Please provide a more specific location." }),
   description: z.string().optional(),
-  photo: z.any().optional(),
+  photo: z.any()
+    .optional()
+    .refine((files) => !files || files.length === 0 || files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+    .refine(
+      (files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      ".jpg, .jpeg, .png and .webp files are accepted."
+    ),
   lat: z.number().optional(),
   lng: z.number().optional(),
 });
@@ -124,26 +133,61 @@ const ReportIssue = () => {
       return;
     }
 
-    const { issueType, location, description, lat, lng } = values;
+    const toastId = showLoading("Submitting your report...");
+    let photoUrl: string | null = null;
 
-    const { error } = await supabase.from("issues").insert([
-      {
-        issue_type: issueType,
-        location,
-        description,
-        user_id: user.id,
-        lat,
-        lng,
-      },
-    ]);
+    try {
+      // Handle photo upload if a file is provided
+      if (values.photo && values.photo.length > 0) {
+        const file = values.photo[0];
+        const filePath = `${user.id}/${Date.now()}-${file.name}`;
+        
+        dismissToast(toastId);
+        showLoading("Uploading photo...");
 
-    if (error) {
-      console.error("Error reporting issue:", error);
-      showError(`Failed to submit report: ${error.message}`);
-    } else {
+        const { error: uploadError } = await supabase.storage
+          .from("issue_photos")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw new Error(`Photo upload failed: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("issue_photos")
+          .getPublicUrl(filePath);
+        
+        photoUrl = publicUrlData.publicUrl;
+        dismissToast(toastId);
+        showLoading("Finalizing report...");
+      }
+
+      const { issueType, location, description, lat, lng } = values;
+      const { error: insertError } = await supabase.from("issues").insert([
+        {
+          issue_type: issueType,
+          location,
+          description,
+          user_id: user.id,
+          photo_url: photoUrl,
+          lat,
+          lng,
+        },
+      ]);
+
+      if (insertError) {
+        throw new Error(`Failed to submit report: ${insertError.message}`);
+      }
+
+      dismissToast(toastId);
       showSuccess("Issue reported successfully! Thank you.");
       form.reset();
       navigate("/");
+
+    } catch (error: any) {
+      dismissToast(toastId);
+      showError(error.message);
+      console.error("Error reporting issue:", error);
     }
   }
 
@@ -250,8 +294,15 @@ const ReportIssue = () => {
                   <FormItem>
                     <FormLabel>Upload Photo (Optional)</FormLabel>
                     <FormControl>
-                      <Input type="file" {...field} />
+                      <Input 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={(e) => field.onChange(e.target.files)}
+                      />
                     </FormControl>
+                     <FormDescription>
+                      Max file size: 5MB. Accepted formats: JPG, PNG, WEBP.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
