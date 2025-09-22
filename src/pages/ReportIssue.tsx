@@ -21,10 +21,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { showSuccess, showError } from "@/utils/toast";
+import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { MapPin } from "lucide-react";
+import { useState } from "react";
 
 const formSchema = z.object({
   issueType: z.string({
@@ -35,11 +37,15 @@ const formSchema = z.object({
     .min(5, { message: "Please provide a more specific location." }),
   description: z.string().optional(),
   photo: z.any().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
 });
 
 const ReportIssue = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,13 +54,40 @@ const ReportIssue = () => {
     },
   });
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      showError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    const toastId = showLoading("Fetching your location...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        form.setValue("lat", latitude);
+        form.setValue("lng", longitude);
+        form.setValue("location", `Location captured via GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        dismissToast(toastId);
+        showSuccess("Location captured successfully!");
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        dismissToast(toastId);
+        showError(`Error getting location: ${error.message}`);
+        setIsGettingLocation(false);
+      }
+    );
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
       showError("You must be logged in to report an issue.");
       return;
     }
 
-    const { issueType, location, description } = values;
+    const { issueType, location, description, lat, lng } = values;
 
     const { error } = await supabase.from("issues").insert([
       {
@@ -62,6 +95,8 @@ const ReportIssue = () => {
         location,
         description,
         user_id: user.id,
+        lat,
+        lng,
       },
     ]);
 
@@ -126,13 +161,25 @@ const ReportIssue = () => {
                   <FormItem>
                     <FormLabel>Location</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="e.g., Near Meenakshi Amman Temple, Madurai"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          placeholder="e.g., Near Meenakshi Amman Temple, Madurai"
+                          {...field}
+                        />
+                         <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                          onClick={handleGetLocation}
+                          disabled={isGettingLocation}
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormDescription>
-                      Please provide a nearby landmark or street name.
+                      Provide a landmark or use the button to get your GPS location.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

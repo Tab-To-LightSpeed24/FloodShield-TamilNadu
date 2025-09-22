@@ -24,19 +24,15 @@ type Issue = {
 };
 
 const fetchAllIssuesForMap = async (): Promise<Issue[]> => {
-  const { data, error } = await supabase.from("issues").select("id");
+  const { data, error } = await supabase
+    .from("issues")
+    .select("id, lat, lng");
 
   if (error) {
     throw new Error(error.message);
   }
 
-  // NOTE: This is a placeholder for real geocoding.
-  // We are adding random coordinates around Tamil Nadu for visualization.
-  return data.map((issue) => ({
-    ...issue,
-    lat: 11.1271 + (Math.random() - 0.5) * 4,
-    lng: 78.6569 + (Math.random() - 0.5) * 4,
-  }));
+  return data.filter(issue => issue.lat && issue.lng);
 };
 
 const DashboardMap = () => {
