@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess } from "@/utils/toast";
 import { useProfile } from "@/hooks/useProfile";
+import { Separator } from "@/components/ui/separator";
 
 const Header = () => {
   const { session, user } = useAuth();
@@ -127,12 +128,17 @@ const Header = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
-                <nav className="flex flex-col space-y-4 mt-8 text-lg">
+                <div className="flex items-center mb-6">
+                  <Shield className="h-6 w-6 mr-2 text-blue-600" />
+                  <span className="font-bold text-lg">FloodShield</span>
+                </div>
+                <Separator />
+                <nav className="flex flex-col space-y-1 mt-6 text-base">
                   {navLinks.map((link) => (
                     <SheetClose asChild key={link.label}>
                       <Link
                         to={link.to}
-                        className="transition-colors hover:text-foreground/80"
+                        className="transition-colors hover:bg-accent p-3 rounded-md"
                       >
                         {link.label}
                       </Link>
@@ -140,7 +146,7 @@ const Header = () => {
                   ))}
                    {profile?.role === 'admin' && (
                     <SheetClose asChild>
-                      <Link to="/admin" className="transition-colors hover:text-foreground/80 flex items-center">
+                      <Link to="/admin" className="transition-colors hover:bg-accent p-3 rounded-md flex items-center">
                         <ShieldCheck className="h-5 w-5 mr-2" />
                         Admin
                       </Link>
