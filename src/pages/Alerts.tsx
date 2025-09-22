@@ -1,35 +1,67 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Info, ShieldCheck } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle, Info, ShieldCheck, AlertCircle } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
-const alerts = [
-  {
-    level: "Warning",
-    title: "Severe Waterlogging in T. Nagar",
-    description: "Heavy rainfall has caused severe waterlogging around the T. Nagar bus depot. Avoid the area. Authorities have been dispatched.",
-    time: "30 minutes ago",
-    variant: "destructive",
-    icon: <AlertTriangle className="h-5 w-5" />,
-  },
-  {
-    level: "Watch",
-    title: "Potential Flooding in Velachery",
-    description: "Water levels in Velachery Lake are rising. Residents in low-lying areas should be prepared for potential flooding in the next 6 hours.",
-    time: "2 hours ago",
-    variant: "default",
-    icon: <Info className="h-5 w-5" />,
-  },
-  {
-    level: "Resolved",
-    title: "Blocked Drain Cleared in Adyar",
-    description: "The blocked drain reported on Sardar Patel Road has been cleared. Water has receded.",
-    time: "5 hours ago",
-    variant: "secondary",
-    icon: <ShieldCheck className="h-5 w-5" />,
-  },
-];
+type Alert = {
+  id: string;
+  created_at: string;
+  level: string;
+  title: string;
+  description: string;
+};
+
+const fetchAlerts = async (): Promise<Alert[]> => {
+  const { data, error } = await supabase
+    .from("alerts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+const getAlertProps = (level: string) => {
+  switch (level.toLowerCase()) {
+    case "warning":
+      return {
+        variant: "destructive",
+        icon: <AlertTriangle className="h-5 w-5" />,
+      };
+    case "watch":
+      return {
+        variant: "default",
+        icon: <Info className="h-5 w-5" />,
+      };
+    case "resolved":
+      return {
+        variant: "secondary",
+        icon: <ShieldCheck className="h-5 w-5" />,
+      };
+    default:
+      return {
+        variant: "outline",
+        icon: <Info className="h-5 w-5" />,
+      };
+  }
+};
 
 const Alerts = () => {
+  const {
+    data: alerts,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Alert[]>({
+    queryKey: ["alerts"],
+    queryFn: fetchAlerts,
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -39,23 +71,61 @@ const Alerts = () => {
         </p>
       </div>
       <div className="space-y-4">
-        {alerts.map((alert, index) => (
-          <Card key={index}>
+        {isLoading &&
+          [...Array(3)].map((_, index) => (
+            <Card key={index}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+                <Skeleton className="h-4 w-1/4 mt-1" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
+
+        {isError && (
+          <Card className="bg-destructive/10 border-destructive">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  {alert.icon}
-                  {alert.title}
-                </CardTitle>
-                <Badge variant={alert.variant as any}>{alert.level}</Badge>
-              </div>
-              <CardDescription>{alert.time}</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Failed to load alerts
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p>{alert.description}</p>
+              <p className="text-destructive/80">{error?.message}</p>
             </CardContent>
           </Card>
-        ))}
+        )}
+
+        {alerts?.map((alert) => {
+          const { variant, icon } = getAlertProps(alert.level);
+          return (
+            <Card key={alert.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    {icon}
+                    {alert.title}
+                  </CardTitle>
+                  <Badge variant={variant as any}>{alert.level}</Badge>
+                </div>
+                <CardDescription>
+                  {formatDistanceToNow(new Date(alert.created_at), {
+                    addSuffix: true,
+                  })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p>{alert.description}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
