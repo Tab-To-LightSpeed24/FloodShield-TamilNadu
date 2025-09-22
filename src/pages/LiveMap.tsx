@@ -6,7 +6,7 @@ import { AlertCircle } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import MarkerClusterGroup from "react-leaflet-markercluster";
+import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
 
 // This is a common fix for an issue with react-leaflet and webpack
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -72,6 +72,7 @@ const LiveMap = () => {
               <div className="flex items-center justify-center h-full">
                 <Skeleton className="h-full w-full" />
               </div>
+            </div>
             )}
             {isError && (
               <div className="flex flex-col items-center justify-center h-full text-destructive">
