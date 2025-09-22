@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Droplets } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
+import ReactDOMServer from "react-dom/server";
 
-// This is a common fix for an issue with react-leaflet and webpack
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -18,6 +18,18 @@ const DefaultIcon = L.icon({
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
+});
+
+const FloodIcon = L.divIcon({
+  html: ReactDOMServer.renderToString(
+    <div className="p-1 bg-red-600 rounded-full shadow-lg border-2 border-white">
+      <Droplets className="h-5 w-5 text-white" />
+    </div>
+  ),
+  className: 'bg-transparent border-0',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -93,7 +105,11 @@ const LiveMap = () => {
                 />
                 <MarkerClusterGroup>
                   {issues.map((issue) => (
-                    <Marker key={issue.id} position={[issue.lat, issue.lng]}>
+                    <Marker 
+                      key={issue.id} 
+                      position={[issue.lat, issue.lng]}
+                      icon={issue.issue_type === 'flood' ? FloodIcon : DefaultIcon}
+                    >
                       <Popup>
                         <div className="font-bold capitalize">
                           {issue.issue_type.replace("-", " ")}
@@ -117,14 +133,16 @@ const LiveMap = () => {
         <CardHeader>
           <CardTitle>Map Legend</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
+        <CardContent className="flex flex-wrap gap-4 items-center">
           <div className="flex items-center space-x-2">
             <img src={icon} alt="Issue marker" className="h-6" />
-            <span className="text-sm">Reported Issue</span>
+            <span className="text-sm">Standard Issue</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 rounded-full bg-blue-500" />
-            <span className="text-sm">Relief Shelter</span>
+            <div className="p-1 bg-red-600 rounded-full shadow-lg border-2 border-white inline-block">
+              <Droplets className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-sm font-bold">Flood Report</span>
           </div>
         </CardContent>
       </Card>

@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MapPin } from "lucide-react";
 import { useState } from "react";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
 const formSchema = z.object({
   issueType: z.string({
@@ -45,6 +46,7 @@ const ReportIssue = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const { isFloodSeasonActive } = useSiteConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -110,8 +112,8 @@ const ReportIssue = () => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000, // 15 seconds
-        maximumAge: 0, // Do not use a cached position
+        timeout: 15000,
+        maximumAge: 0,
       }
     );
   };
@@ -173,6 +175,11 @@ const ReportIssue = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        {isFloodSeasonActive && (
+                          <SelectItem value="flood" className="text-destructive font-bold focus:bg-destructive/10 focus:text-destructive">
+                            Flood
+                          </SelectItem>
+                        )}
                         <SelectItem value="waterlogging">
                           Waterlogging
                         </SelectItem>

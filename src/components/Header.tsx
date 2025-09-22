@@ -1,4 +1,4 @@
-import { Shield, Menu, LogOut, LogIn, User as UserIcon } from "lucide-react";
+import { Shield, Menu, LogOut, LogIn, User as UserIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -105,6 +105,12 @@ const Header = () => {
                   <Link to="/profile">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/my-reports">
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>My Reports</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
