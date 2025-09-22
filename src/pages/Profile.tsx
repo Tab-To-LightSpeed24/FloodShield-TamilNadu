@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,47 +12,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { showSuccess, showError } from "@/utils/toast";
 import { User } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { useEffect } from "react";
 
 const profileSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().optional(),
 });
 
-type ProfileData = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  avatar_url: string;
-};
-
 const Profile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-
-  const fetchProfile = async () => {
-    if (!user) return null;
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-    if (error) throw new Error(error.message);
-    return data;
-  };
-
-  const { data: profile, isLoading } = useQuery<ProfileData | null>({
-    queryKey: ["profile", user?.id],
-    queryFn: fetchProfile,
-    enabled: !!user,
-  });
+  const { data: profile, isLoading } = useProfile();
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm({
     resolver: zodResolver(profileSchema),
-    values: {
-      first_name: profile?.first_name || "",
-      last_name: profile?.last_name || "",
-    }
   });
+
+  useEffect(() => {
+    if (profile) {
+      setValue("first_name", profile.first_name || "");
+      setValue("last_name", profile.last_name || "");
+    }
+  }, [profile, setValue]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedProfile: z.infer<typeof profileSchema>) => {
@@ -103,7 +85,7 @@ const Profile = () => {
         <CardHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={profile?.avatar_url} alt={profile?.first_name} />
+              <AvatarImage src={profile?.avatar_url} alt={profile?.first_name || ""} />
               <AvatarFallback>
                 <User className="h-10 w-10" />
               </AvatarFallback>

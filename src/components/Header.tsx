@@ -1,4 +1,4 @@
-import { Shield, Menu, LogOut, LogIn, User as UserIcon, FileText } from "lucide-react";
+import { Shield, Menu, LogOut, LogIn, User as UserIcon, FileText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -19,31 +19,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess } from "@/utils/toast";
-import { useQuery } from "@tanstack/react-query";
+import { useProfile } from "@/hooks/useProfile";
 
 const Header = () => {
   const { session, user } = useAuth();
   const navigate = useNavigate();
-
-  const fetchProfile = async () => {
-    if (!user) return null;
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("avatar_url, first_name")
-      .eq("id", user.id)
-      .single();
-    if (error) {
-      console.error("Error fetching profile for header:", error);
-      return null;
-    }
-    return data;
-  };
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile-header", user?.id],
-    queryFn: fetchProfile,
-    enabled: !!user,
-  });
+  const { data: profile } = useProfile();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -77,6 +58,15 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+          {profile?.role === 'admin' && (
+            <Link
+              to="/admin"
+              className="flex items-center transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              <ShieldCheck className="h-4 w-4 mr-1" />
+              Admin
+            </Link>
+          )}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {session ? (
@@ -148,6 +138,14 @@ const Header = () => {
                       </Link>
                     </SheetClose>
                   ))}
+                   {profile?.role === 'admin' && (
+                    <SheetClose asChild>
+                      <Link to="/admin" className="transition-colors hover:text-foreground/80 flex items-center">
+                        <ShieldCheck className="h-5 w-5 mr-2" />
+                        Admin
+                      </Link>
+                    </SheetClose>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -156,6 +154,3 @@ const Header = () => {
       </div>
     </header>
   );
-};
-
-export default Header;

@@ -11,8 +11,10 @@ import Alerts from "./pages/Alerts";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import MyReports from "./pages/MyReports";
+import Admin from "./pages/Admin";
 import { useAuth } from "./contexts/AuthContext";
 import { Skeleton } from "./components/ui/skeleton";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -50,6 +52,10 @@ const App = () => (
             <Route path="/report" element={<ReportIssue />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/my-reports" element={<MyReports />} />
+          </Route>
+
+          <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin" element={<Admin />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES HERE */}
