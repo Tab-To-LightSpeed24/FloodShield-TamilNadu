@@ -72,7 +72,6 @@ const LiveMap = () => {
               <div className="flex items-center justify-center h-full">
                 <Skeleton className="h-full w-full" />
               </div>
-            </div>
             )}
             {isError && (
               <div className="flex flex-col items-center justify-center h-full text-destructive">
