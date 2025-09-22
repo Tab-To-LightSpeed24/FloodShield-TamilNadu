@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import ReportIssue from "./pages/ReportIssue";
+import LiveMap from "./pages/LiveMap";
+import Alerts from "./pages/Alerts";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +22,8 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
             <Route path="/report" element={<ReportIssue />} />
+            <Route path="/map" element={<LiveMap />} />
+            <Route path="/alerts" element={<Alerts />} />
             {/* ADD ALL CUSTOM ROUTES HERE */}
           </Route>
           <Route path="*" element={<NotFound />} />
