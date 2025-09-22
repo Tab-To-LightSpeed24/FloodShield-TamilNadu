@@ -3,8 +3,31 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Map, Megaphone, Droplets } from "lucide-react";
 import { Link } from "react-router-dom";
 import RecentIssues from "@/components/RecentIssues";
+import DashboardMap from "@/components/DashboardMap";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const fetchActiveAlertsCount = async () => {
+  const { count, error } = await supabase
+    .from("alerts")
+    .select("*", { count: "exact", head: true })
+    .neq("level", "Resolved");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return count ?? 0;
+};
 
 const Index = () => {
+  const { data: activeAlertsCount, isLoading: isLoadingAlerts } = useQuery<
+    number
+  >({
+    queryKey: ["activeAlertsCount"],
+    queryFn: fetchActiveAlertsCount,
+  });
+
   return (
     <div className="space-y-6">
       <div className="text-left">
@@ -24,9 +47,7 @@ const Index = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center">
-            <p className="text-gray-500">Map visualization will be here</p>
-          </div>
+          <DashboardMap />
         </CardContent>
       </Card>
 
@@ -67,9 +88,15 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">0</div>
+            {isLoadingAlerts ? (
+              <Skeleton className="h-10 w-12" />
+            ) : (
+              <div className="text-4xl font-bold">{activeAlertsCount}</div>
+            )}
             <p className="text-sm text-muted-foreground">
-              No active alerts in your zone
+              {activeAlertsCount === 0
+                ? "No active alerts in your zone"
+                : "Active alerts requiring attention"}
             </p>
           </CardContent>
         </Card>
