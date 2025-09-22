@@ -74,9 +74,9 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url} alt={profile?.first_name || "User"} />
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.first_name || "User"} />
                     <AvatarFallback>
-                      {profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4"/>}
+                      {profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -154,3 +154,6 @@ const Header = () => {
       </div>
     </header>
   );
+};
+
+export default Header;
