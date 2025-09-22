@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -14,8 +13,6 @@ import Profile from "./pages/Profile";
 import MyReports from "./pages/MyReports";
 import { useAuth } from "./contexts/AuthContext";
 import { Skeleton } from "./components/ui/skeleton";
-
-const queryClient = new QueryClient();
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -38,31 +35,29 @@ const ProtectedRoute = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/map" element={<LiveMap />} />
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/login" element={<Login />} />
+  <TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Index />} />
+          <Route path="/map" element={<LiveMap />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/login" element={<Login />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/report" element={<ReportIssue />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/my-reports" element={<MyReports />} />
-            </Route>
-
-            {/* ADD ALL CUSTOM ROUTES HERE */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/report" element={<ReportIssue />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/my-reports" element={<MyReports />} />
           </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+
+          {/* ADD ALL CUSTOM ROUTES HERE */}
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  </TooltipProvider>
 );
 
 export default App;
