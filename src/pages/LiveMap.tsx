@@ -8,7 +8,7 @@ const LiveMap = () => {
         <h1 className="text-3xl font-bold tracking-tight">Live Flood Risk Map</h1>
         <p className="text-muted-foreground">
           Real-time visualization of flood risk across Chennai.
-        p>
+        </p>
       </div>
       <Card>
         <CardContent className="p-0">
