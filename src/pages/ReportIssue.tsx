@@ -61,22 +61,57 @@ const ReportIssue = () => {
     }
 
     setIsGettingLocation(true);
-    const toastId = showLoading("Fetching your location...");
+    let toastId = showLoading("Fetching your location with high accuracy...");
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         form.setValue("lat", latitude);
         form.setValue("lng", longitude);
-        form.setValue("location", `Location captured via GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        
         dismissToast(toastId);
-        showSuccess("Location captured successfully!");
-        setIsGettingLocation(false);
+        toastId = showLoading("Looking up address...");
+
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch address');
+          }
+          const data = await response.json();
+          
+          if (data && data.display_name) {
+            form.setValue("location", data.display_name, { shouldValidate: true });
+            showSuccess("Location and address captured!");
+          } else {
+            form.setValue("location", `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { shouldValidate: true });
+            showSuccess("Location captured, but could not find a street address.");
+          }
+        } catch (error) {
+          console.error("Reverse geocoding error:", error);
+          form.setValue("location", `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { shouldValidate: true });
+          showError("Location captured, but failed to get address.");
+        } finally {
+          dismissToast(toastId);
+          setIsGettingLocation(false);
+        }
       },
       (error) => {
         dismissToast(toastId);
-        showError(`Error getting location: ${error.message}`);
+        let message = `Error getting location: ${error.message}`;
+        if (error.code === 1) {
+          message = "Please allow location access in your browser settings.";
+        } else if (error.code === 2) {
+          message = "Location information is unavailable.";
+        } else if (error.code === 3) {
+          message = "Getting location timed out. Please try again.";
+        }
+        showError(message);
         setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000, // 15 seconds
+        maximumAge: 0, // Do not use a cached position
       }
     );
   };
