@@ -1,4 +1,4 @@
-import { Shield, Menu } from "lucide-react";
+import { Shield, Menu, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -6,9 +6,21 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { showSuccess } from "@/utils/toast";
 
 const Header = () => {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    showSuccess("You have been logged out.");
+    navigate("/");
+  };
+
   const navLinks = [
     { to: "/", label: "Dashboard" },
     { to: "/map", label: "Live Map" },
@@ -36,7 +48,20 @@ const Header = () => {
             </Link>
           ))}
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          {session ? (
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
+              </Link>
+            </Button>
+          )}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -57,6 +82,21 @@ const Header = () => {
                       </Link>
                     </SheetClose>
                   ))}
+                   <div className="pt-4 border-t">
+                    {session ? (
+                      <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+                        <LogOut className="h-5 w-5 mr-2" />
+                        Logout
+                      </Button>
+                    ) : (
+                      <SheetClose asChild>
+                        <Link to="/login" className="flex items-center w-full p-2 rounded-md transition-colors hover:bg-muted">
+                          <LogIn className="h-5 w-5 mr-2" />
+                          Login
+                        </Link>
+                      </SheetClose>
+                    )}
+                  </div>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -65,6 +105,3 @@ const Header = () => {
       </div>
     </header>
   );
-};
-
-export default Header;

@@ -22,8 +22,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { showSuccess, showError } from "@/utils/toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   issueType: z.string({
@@ -37,6 +38,8 @@ const formSchema = z.object({
 });
 
 const ReportIssue = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -46,18 +49,29 @@ const ReportIssue = () => {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+      showError("You must be logged in to report an issue.");
+      return;
+    }
+
     const { issueType, location, description } = values;
 
-    const { error } = await supabase
-      .from("issues")
-      .insert([{ issue_type: issueType, location, description }]);
+    const { error } = await supabase.from("issues").insert([
+      {
+        issue_type: issueType,
+        location,
+        description,
+        user_id: user.id,
+      },
+    ]);
 
     if (error) {
       console.error("Error reporting issue:", error);
-      showError("Failed to submit report. Please try again.");
+      showError(`Failed to submit report: ${error.message}`);
     } else {
       showSuccess("Issue reported successfully! Thank you.");
       form.reset();
+      navigate("/");
     }
   }
 
@@ -112,7 +126,10 @@ const ReportIssue = () => {
                   <FormItem>
                     <FormLabel>Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Near T. Nagar bus depot" {...field} />
+                      <Input
+                        placeholder="e.g., Near T. Nagar bus depot"
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
                       Please provide a nearby landmark or street name.
@@ -155,7 +172,9 @@ const ReportIssue = () => {
                   <Link to="/">Cancel</Link>
                 </Button>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "Submitting..." : "Submit Report"}
+                  {form.formState.isSubmitting
+                    ? "Submitting..."
+                    : "Submit Report"}
                 </Button>
               </div>
             </form>
