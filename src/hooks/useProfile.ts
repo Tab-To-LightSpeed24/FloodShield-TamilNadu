@@ -8,6 +8,8 @@ export type Profile = {
   last_name: string | null;
   avatar_url: string | null;
   role: string | null;
+  phone: string | null;
+  home_location: string | null;
 };
 
 const fetchProfile = async (userId: string | undefined): Promise<Profile | null> => {

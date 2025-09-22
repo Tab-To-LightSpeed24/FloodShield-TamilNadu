@@ -18,6 +18,8 @@ import { useEffect } from "react";
 const profileSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().optional(),
+  phone: z.string().optional(),
+  home_location: z.string().optional(),
 });
 
 const Profile = () => {
@@ -33,6 +35,8 @@ const Profile = () => {
     if (profile) {
       setValue("first_name", profile.first_name || "");
       setValue("last_name", profile.last_name || "");
+      setValue("phone", profile.phone || "");
+      setValue("home_location", profile.home_location || "");
     }
   }, [profile, setValue]);
 
@@ -72,6 +76,8 @@ const Profile = () => {
           <CardContent className="space-y-4">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-32 self-end" />
           </CardContent>
         </Card>
@@ -98,14 +104,25 @@ const Profile = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="first_name">First Name</Label>
-              <Input id="first_name" {...register("first_name")} />
-              {errors.first_name && <p className="text-sm text-destructive mt-1">{errors.first_name.message}</p>}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="first_name">First Name</Label>
+                <Input id="first_name" {...register("first_name")} />
+                {errors.first_name && <p className="text-sm text-destructive mt-1">{errors.first_name.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="last_name">Last Name</Label>
+                <Input id="last_name" {...register("last_name")} />
+              </div>
             </div>
             <div>
-              <Label htmlFor="last_name">Last Name</Label>
-              <Input id="last_name" {...register("last_name")} />
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input id="phone" type="tel" placeholder="e.g., +91 12345 67890" {...register("phone")} />
+            </div>
+            <div>
+              <Label htmlFor="home_location">Home Location</Label>
+              <Input id="home_location" placeholder="e.g., T. Nagar, Chennai" {...register("home_location")} />
+              <p className="text-sm text-muted-foreground mt-1">Set a primary location for targeted alerts.</p>
             </div>
             <Button type="submit" disabled={updateProfileMutation.isPending}>
               {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
