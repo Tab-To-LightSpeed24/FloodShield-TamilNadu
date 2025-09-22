@@ -1,19 +1,118 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCircle } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// This is a common fix for an issue with react-leaflet and webpack
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+type Issue = {
+  id: string;
+  issue_type: string;
+  location: string;
+  description: string;
+  lat: number;
+  lng: number;
+};
+
+const fetchAllIssues = async (): Promise<Issue[]> => {
+  const { data, error } = await supabase
+    .from("issues")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // NOTE: This is a placeholder for real geocoding.
+  // We are adding random coordinates around Chennai for visualization.
+  return data.map((issue) => ({
+    ...issue,
+    lat: 13.0827 + (Math.random() - 0.5) * 0.2,
+    lng: 80.2707 + (Math.random() - 0.5) * 0.2,
+  }));
+};
 
 const LiveMap = () => {
+  const {
+    data: issues,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Issue[]>({
+    queryKey: ["allIssues"],
+    queryFn: fetchAllIssues,
+  });
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Live Flood Risk Map</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Live Flood Risk Map
+        </h1>
         <p className="text-muted-foreground">
-          Real-time visualization of flood risk across Chennai.
+          Real-time visualization of reported issues across Chennai.
         </p>
       </div>
       <Card>
         <CardContent className="p-0">
-          <div className="h-[60vh] bg-gray-200 dark:bg-gray-800 rounded-md flex items-center justify-center">
-            <p className="text-gray-500">Interactive map will be displayed here</p>
+          <div className="h-[60vh] rounded-md">
+            {isLoading && (
+              <div className="flex items-center justify-center h-full">
+                <Skeleton className="h-full w-full" />
+              </div>
+            )}
+            {isError && (
+              <div className="flex flex-col items-center justify-center h-full text-destructive">
+                <AlertCircle className="h-8 w-8 mb-2" />
+                <p className="font-semibold">Failed to load map data</p>
+                <p className="text-sm text-muted-foreground">{error?.message}</p>
+              </div>
+            )}
+            {issues && (
+              <MapContainer
+                center={[13.0827, 80.2707]}
+                zoom={12}
+                scrollWheelZoom={true}
+                style={{ height: "100%", width: "100%", borderRadius: "inherit" }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {issues.map((issue) => (
+                  <Marker key={issue.id} position={[issue.lat, issue.lng]}>
+                    <Popup>
+                      <div className="font-bold capitalize">
+                        {issue.issue_type.replace("-", " ")}
+                      </div>
+                      <div className="text-sm">{issue.location}</div>
+                      {issue.description && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {issue.description}
+                        </p>
+                      )}
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -23,18 +122,10 @@ const LiveMap = () => {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
           <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 rounded-full bg-red-500" />
-            <span className="text-sm">High Risk</span>
+            <img src={icon} alt="Issue marker" className="h-6" />
+            <span className="text-sm">Reported Issue</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 rounded-full bg-yellow-500" />
-            <span className="text-sm">Moderate Risk</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="h-4 w-4 rounded-full bg-green-500" />
-            <span className="text-sm">Low Risk</span>
-          </div>
-           <div className="flex items-center space-x-2">
             <div className="h-4 w-4 rounded-full bg-blue-500" />
             <span className="text-sm">Relief Shelter</span>
           </div>
