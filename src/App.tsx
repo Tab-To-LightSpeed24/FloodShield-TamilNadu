@@ -16,6 +16,7 @@ import { useAuth } from "./contexts/AuthContext";
 import { Skeleton } from "./components/ui/skeleton";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import DetailedForecast from "./pages/DetailedForecast";
+import IssueDetails from "./pages/IssueDetails";
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/map" element={<LiveMap />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/issue/:id" element={<IssueDetails />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/report" element={<ReportIssue />} />

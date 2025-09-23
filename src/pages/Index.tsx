@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import WeatherForecast from "@/components/WeatherForecast";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
+import ProfileCompletionPrompt from "@/components/ProfileCompletionPrompt";
 
 const fetchActiveAlertsCount = async () => {
   const { count, error } = await supabase
@@ -29,6 +31,10 @@ const Index = () => {
     queryFn: fetchActiveAlertsCount,
   });
 
+  const { isFloodSeasonActive } = useSiteConfig();
+  const riskLevel = isFloodSeasonActive ? "High" : "Low";
+  const riskColor = isFloodSeasonActive ? "text-red-600" : "text-green-600";
+
   return (
     <div className="space-y-6">
       <div className="text-left">
@@ -39,6 +45,8 @@ const Index = () => {
           Real-time flood risk and alerts for Tamil Nadu
         </p>
       </div>
+
+      <ProfileCompletionPrompt />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-6 space-y-6 lg:space-y-0">
         {/* Main column */}
@@ -68,9 +76,9 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-4xl font-bold text-green-600">Low</div>
+                <div className={`text-4xl font-bold ${riskColor}`}>{riskLevel}</div>
                 <p className="text-sm text-muted-foreground">
-                  Last updated: 2 minutes ago
+                  Based on official alerts
                 </p>
               </CardContent>
             </Card>

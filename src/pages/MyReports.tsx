@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
+import { Link, useNavigate } from "react-router-dom";
 
 type Issue = {
   id: string;
@@ -32,6 +33,7 @@ type Issue = {
 const MyReports = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const fetchMyReports = async () => {
     if (!user) return [];
@@ -99,7 +101,7 @@ const MyReports = () => {
               </TableHeader>
               <TableBody>
                 {reports.map((report) => (
-                  <TableRow key={report.id}>
+                  <TableRow key={report.id} onClick={() => navigate(`/issue/${report.id}`)} className="cursor-pointer">
                     <TableCell>
                       <div className="font-medium capitalize">{report.issue_type.replace("-", " ")}</div>
                       <div className="text-sm text-muted-foreground sm:hidden">{report.location}</div>
@@ -107,7 +109,7 @@ const MyReports = () => {
                     <TableCell className="hidden sm:table-cell">{report.location}</TableCell>
                     <TableCell className="hidden md:table-cell">{format(new Date(report.created_at), "PPP")}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{report.status}</Badge></TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
