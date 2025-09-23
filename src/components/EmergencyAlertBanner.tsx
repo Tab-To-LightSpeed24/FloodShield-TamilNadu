@@ -2,7 +2,7 @@ import { useSiteConfig } from "@/contexts/SiteConfigContext";
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const FloodSeasonBanner = () => {
+const EmergencyAlertBanner = () => {
   const { isFloodSeasonActive } = useSiteConfig();
 
   if (!isFloodSeasonActive) {
@@ -12,12 +12,12 @@ const FloodSeasonBanner = () => {
   return (
     <Alert variant="destructive" className="rounded-none border-x-0 border-t-0">
       <AlertTriangle className="h-4 w-4" />
-      <AlertTitle>Flood Season Alert</AlertTitle>
+      <AlertTitle>Emergency Alert Mode Active</AlertTitle>
       <AlertDescription>
-        The government has announced a high probability of floods. Please stay vigilant and report any signs of flooding immediately.
+        An emergency, such as a high probability of floods, is currently active. Please stay vigilant and report any critical issues immediately.
       </AlertDescription>
     </Alert>
   );
 };
 
-export default FloodSeasonBanner;
+export default EmergencyAlertBanner;

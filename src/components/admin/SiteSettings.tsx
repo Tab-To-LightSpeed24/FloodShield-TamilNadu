@@ -65,12 +65,12 @@ const SiteSettings = () => {
               disabled={updateConfigMutation.isPending}
             />
             <Label htmlFor="flood-season-mode" className="text-base">
-              Activate Flood Season Mode
+              Activate Emergency Alert Mode
             </Label>
           </div>
         )}
         <p className="text-sm text-muted-foreground mt-2">
-          When activated, a warning banner will be displayed on all pages and a "Flood" option will be available in the issue reporting form.
+          When activated, a warning banner will be displayed, the live map will show flood report density, and a "Flood" option will be available in the issue reporting form.
         </p>
       </CardContent>
     </Card>

@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { showSuccess, showError } from "@/utils/toast";
-import { User, Edit } from "lucide-react";
+import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
+import { User, Edit, MapPin } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useEffect, useState } from "react";
 
@@ -34,6 +34,7 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const { data: profile, isLoading } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm({
     resolver: zodResolver(profileSchema),
@@ -50,6 +51,46 @@ const Profile = () => {
       reset(defaultValues);
     }
   }, [profile, reset]);
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      showError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsFetchingLocation(true);
+    const toastId = showLoading("Fetching your location...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+          if (!response.ok) throw new Error('Failed to fetch address');
+          
+          const data = await response.json();
+          if (data && data.display_name) {
+            setValue("home_location", data.display_name, { shouldValidate: true });
+            showSuccess("Location set successfully!");
+          } else {
+            throw new Error("Could not find address for your location.");
+          }
+        } catch (error: any) {
+          showError(error.message);
+        } finally {
+          dismissToast(toastId);
+          setIsFetchingLocation(false);
+        }
+      },
+      (error) => {
+        dismissToast(toastId);
+        showError(`Error getting location: ${error.message}`);
+        setIsFetchingLocation(false);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
 
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedProfile: z.infer<typeof profileSchema>) => {
@@ -133,7 +174,19 @@ const Profile = () => {
               </div>
               <div>
                 <Label htmlFor="home_location">Home Location</Label>
-                <Input id="home_location" placeholder="e.g., T. Nagar, Chennai" {...register("home_location")} />
+                <div className="relative">
+                  <Input id="home_location" placeholder="e.g., T. Nagar, Chennai" {...register("home_location")} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                    onClick={handleGetLocation}
+                    disabled={isFetchingLocation}
+                  >
+                    <MapPin className="h-4 w-4" />
+                  </Button>
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">Set a primary location for targeted alerts.</p>
               </div>
               <div className="flex justify-end gap-2">

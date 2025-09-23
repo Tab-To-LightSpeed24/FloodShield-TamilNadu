@@ -32,7 +32,7 @@ const Index = () => {
   });
 
   const { isFloodSeasonActive } = useSiteConfig();
-  const riskLevel = isFloodSeasonActive ? "High" : "Low";
+  const riskLevel = isFloodSeasonActive ? "High" : "Normal";
   const riskColor = isFloodSeasonActive ? "text-red-600" : "text-green-600";
 
   return (

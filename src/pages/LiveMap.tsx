@@ -12,6 +12,7 @@ import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
 import ReactDOMServer from "react-dom/server";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -70,7 +71,25 @@ const fetchAllIssues = async (): Promise<Issue[]> => {
   return data.filter(issue => issue.lat && issue.lng) as Issue[];
 };
 
+const createClusterCustomIcon = (cluster: any) => {
+  const count = cluster.getChildCount();
+  let bgColor = 'bg-green-500';
+  if (count >= 3 && count < 7) {
+    bgColor = 'bg-yellow-500';
+  } else if (count >= 7) {
+    bgColor = 'bg-red-500';
+  }
+
+  return L.divIcon({
+    html: `<div class="${bgColor} text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white">${count}</div>`,
+    className: 'bg-transparent border-0',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+};
+
 const LiveMap = () => {
+  const { isFloodSeasonActive: isEmergencyModeActive } = useSiteConfig();
   const {
     data: issues,
     isLoading,
@@ -81,6 +100,10 @@ const LiveMap = () => {
     queryFn: fetchAllIssues,
   });
 
+  const displayedIssues = isEmergencyModeActive
+    ? issues?.filter(issue => issue.issue_type === 'flood')
+    : issues;
+
   return (
     <div className="space-y-6">
       <div>
@@ -88,7 +111,10 @@ const LiveMap = () => {
           Live Flood Risk Map
         </h1>
         <p className="text-muted-foreground">
-          Real-time visualization of reported issues across Tamil Nadu.
+          {isEmergencyModeActive
+            ? "Displaying density of active flood reports."
+            : "Real-time visualization of reported issues across Tamil Nadu."
+          }
         </p>
       </div>
       <Card>
@@ -106,7 +132,7 @@ const LiveMap = () => {
                 <p className="text-sm text-muted-foreground">{error?.message}</p>
               </div>
             )}
-            {issues && (
+            {displayedIssues && (
               <MapContainer
                 center={[11.1271, 78.6569]}
                 zoom={7}
@@ -117,8 +143,10 @@ const LiveMap = () => {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <MarkerClusterGroup>
-                  {issues.map((issue) => (
+                <MarkerClusterGroup
+                  iconCreateFunction={isEmergencyModeActive ? createClusterCustomIcon : undefined}
+                >
+                  {displayedIssues.map((issue) => (
                     <Marker 
                       key={issue.id} 
                       position={[issue.lat, issue.lng]}
@@ -159,6 +187,22 @@ const LiveMap = () => {
             </div>
             <span className="text-sm font-bold">Flood Report</span>
           </div>
+          {isEmergencyModeActive && (
+            <>
+              <div className="flex items-center space-x-2">
+                <div className="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shadow-lg border-2 border-white">1+</div>
+                <span className="text-sm">Low Density</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shadow-lg border-2 border-white">3+</div>
+                <span className="text-sm">Medium Density</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shadow-lg border-2 border-white">7+</div>
+                <span className="text-sm">High Density</span>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
