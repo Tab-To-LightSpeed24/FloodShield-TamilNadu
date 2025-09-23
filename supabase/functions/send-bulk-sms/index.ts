@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { Twilio } from "https://deno.land/x/twilio@0.10.0/mod.ts";
+import twilio from "npm:twilio";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +56,7 @@ serve(async (req) => {
 
     const phoneNumbers = profilesWithPhones.map(p => p.phone).filter(Boolean);
     if (phoneNumbers.length === 0) {
-      return new Response(JSON.stringify({ message: "No users with phone numbers to send alerts to." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ message: "No users with phone numbers to send alerts to." }), { headers: { ...corsers, 'Content-Type': 'application/json' } })
     }
 
     // Get Twilio credentials from environment variables
@@ -69,11 +69,11 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "Server configuration error: Twilio is not set up." }), { status: 500, headers: corsHeaders })
     }
 
-    const twilio = new Twilio(accountSid, authToken);
+    const client = twilio(accountSid, authToken);
 
     // Send messages to all numbers
     const messagePromises = phoneNumbers.map(number => {
-      return twilio.messages.create({
+      return client.messages.create({
         to: number,
         from: twilioPhoneNumber,
         body: message,
