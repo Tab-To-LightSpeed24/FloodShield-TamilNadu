@@ -52,9 +52,32 @@ serve(async (req) => {
 
     if (profilesError) throw profilesError
 
-    const phoneNumbers = profilesWithPhones.map(p => p.phone).filter(Boolean);
+    const phoneNumbers = profilesWithPhones
+      .map(p => {
+        if (!p.phone) return null;
+        // Clean the number by removing all non-digit characters
+        let cleaned = p.phone.replace(/\D/g, '');
+        
+        // If it's a 10-digit number (common for India), prepend +91
+        if (cleaned.length === 10) {
+          return `+91${cleaned}`;
+        }
+        // If it's 12 digits and starts with 91, it's just missing the +
+        if (cleaned.length === 12 && cleaned.startsWith('91')) {
+          return `+${cleaned}`;
+        }
+        // If the original number already starts with a +, assume it's correctly formatted
+        if (p.phone.startsWith('+')) {
+          return p.phone;
+        }
+        
+        // If we can't determine a valid format, return null to filter it out
+        return null;
+      })
+      .filter(Boolean) as string[]; // Filter out any nulls
+
     if (phoneNumbers.length === 0) {
-      return new Response(JSON.stringify({ message: "No users with phone numbers to send alerts to." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ message: "No users with valid phone numbers to send alerts to." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     // Get Twilio credentials
@@ -81,7 +104,8 @@ serve(async (req) => {
     // Add WhatsApp promises
     if (whatsappFromNumber) {
       phoneNumbers.forEach(number => {
-        allPromises.push(client.messages.create({ to: `whatsapp:${number}`, from: whatsappFromNumber, body: message }));
+        // For WhatsApp, Twilio expects the number in the format 'whatsapp:+[number]'
+        allPromises.push(client.messages.create({ to: `whatsapp:${number}`, from: `whatsapp:${whatsappFromNumber}`, body: message }));
       });
     }
 
