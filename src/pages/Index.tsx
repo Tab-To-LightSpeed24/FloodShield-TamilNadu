@@ -39,84 +39,91 @@ const Index = () => {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Map className="mr-2 h-5 w-5 text-blue-500" />
-            Live Flood Risk Map
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DashboardMap />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-6 space-y-6 lg:space-y-0">
+        {/* Main column */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Map className="mr-2 h-5 w-5 text-primary" />
+                Live Flood Risk Map
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DashboardMap />
+            </CardContent>
+          </Card>
+          <RecentIssues />
+        </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <AlertTriangle className="mr-2 h-5 w-5 text-yellow-500" />
-              Current Risk Level
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-green-600">Low</div>
-            <p className="text-sm text-muted-foreground">
-              Last updated: 2 minutes ago
-            </p>
-          </CardContent>
-        </Card>
+        {/* Side column */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-base font-semibold">
+                  <AlertTriangle className="mr-2 h-5 w-5 text-yellow-500" />
+                  Current Risk Level
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold text-green-600">Low</div>
+                <p className="text-sm text-muted-foreground">
+                  Last updated: 2 minutes ago
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Droplets className="mr-2 h-5 w-5 text-cyan-500" />
-              Rainfall Forecast
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Light showers expected</div>
-            <p className="text-sm text-muted-foreground">Next 6 hours</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-base font-semibold">
+                  <Droplets className="mr-2 h-5 w-5 text-cyan-500" />
+                  Rainfall Forecast
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">Light showers</div>
+                <p className="text-sm text-muted-foreground">Next 6 hours</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Megaphone className="mr-2 h-5 w-5 text-red-500" />
-              Active Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingAlerts ? (
-              <Skeleton className="h-10 w-12" />
-            ) : (
-              <div className="text-4xl font-bold">{activeAlertsCount}</div>
-            )}
-            <p className="text-sm text-muted-foreground">
-              {activeAlertsCount === 0
-                ? "No active alerts in your zone"
-                : "Active alerts requiring attention"}
-            </p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-base font-semibold">
+                  <Megaphone className="mr-2 h-5 w-5 text-red-500" />
+                  Active Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingAlerts ? (
+                  <Skeleton className="h-10 w-12" />
+                ) : (
+                  <div className="text-4xl font-bold">{activeAlertsCount}</div>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  {activeAlertsCount === 0
+                    ? "No active alerts"
+                    : "Requiring attention"}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Community Reporting</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-start gap-4">
+              <p className="text-muted-foreground">
+                See waterlogging or a blocked drain? Let us know.
+              </p>
+              <Button asChild>
+                <Link to="/report">Report an Issue</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      <RecentIssues />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Community Reporting</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-muted-foreground">
-            See waterlogging or a blocked drain? Let us know.
-          </p>
-          <Button asChild>
-            <Link to="/report">Report an Issue</Link>
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 };
