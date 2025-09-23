@@ -11,9 +11,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { showSuccess, showError } from "@/utils/toast";
-import { User } from "lucide-react";
+import { User, Edit } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const profileSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -22,23 +22,34 @@ const profileSchema = z.object({
   home_location: z.string().optional(),
 });
 
+const ProfileInfoRow = ({ label, value }: { label: string; value: string | null | undefined }) => (
+  <div>
+    <Label className="text-sm text-muted-foreground">{label}</Label>
+    <p className="text-base">{value || <span className="italic">Not set</span>}</p>
+  </div>
+);
+
 const Profile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: profile, isLoading } = useProfile();
+  const [isEditing, setIsEditing] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm({
+  const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm({
     resolver: zodResolver(profileSchema),
   });
 
   useEffect(() => {
     if (profile) {
-      setValue("first_name", profile.first_name || "");
-      setValue("last_name", profile.last_name || "");
-      setValue("phone", profile.phone || "");
-      setValue("home_location", profile.home_location || "");
+      const defaultValues = {
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        phone: profile.phone || "",
+        home_location: profile.home_location || "",
+      };
+      reset(defaultValues);
     }
-  }, [profile, setValue]);
+  }, [profile, reset]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedProfile: z.infer<typeof profileSchema>) => {
@@ -52,6 +63,7 @@ const Profile = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
       showSuccess("Profile updated successfully!");
+      setIsEditing(false);
     },
     onError: (error) => {
       showError(`Failed to update profile: ${error.message}`);
@@ -103,31 +115,50 @@ const Profile = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="first_name">First Name</Label>
-                <Input id="first_name" {...register("first_name")} />
-                {errors.first_name && <p className="text-sm text-destructive mt-1">{errors.first_name.message}</p>}
+          {isEditing ? (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input id="first_name" {...register("first_name")} />
+                  {errors.first_name && <p className="text-sm text-destructive mt-1">{errors.first_name.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input id="last_name" {...register("last_name")} />
+                </div>
               </div>
               <div>
-                <Label htmlFor="last_name">Last Name</Label>
-                <Input id="last_name" {...register("last_name")} />
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input id="phone" type="tel" placeholder="e.g., +91 12345 67890" {...register("phone")} />
               </div>
+              <div>
+                <Label htmlFor="home_location">Home Location</Label>
+                <Input id="home_location" placeholder="e.g., T. Nagar, Chennai" {...register("home_location")} />
+                <p className="text-sm text-muted-foreground mt-1">Set a primary location for targeted alerts.</p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" type="button" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit" disabled={updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-6">
+                <ProfileInfoRow label="First Name" value={profile?.first_name} />
+                <ProfileInfoRow label="Last Name" value={profile?.last_name} />
+              </div>
+              <ProfileInfoRow label="Email" value={user?.email} />
+              <ProfileInfoRow label="Phone Number" value={profile?.phone} />
+              <ProfileInfoRow label="Home Location" value={profile?.home_location} />
+              <Button onClick={() => setIsEditing(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Profile
+              </Button>
             </div>
-            <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" placeholder="e.g., +91 12345 67890" {...register("phone")} />
-            </div>
-            <div>
-              <Label htmlFor="home_location">Home Location</Label>
-              <Input id="home_location" placeholder="e.g., T. Nagar, Chennai" {...register("home_location")} />
-              <p className="text-sm text-muted-foreground mt-1">Set a primary location for targeted alerts.</p>
-            </div>
-            <Button type="submit" disabled={updateProfileMutation.isPending}>
-              {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
-            </Button>
-          </form>
+          )}
         </CardContent>
       </Card>
     </div>
