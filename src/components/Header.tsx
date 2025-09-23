@@ -49,6 +49,7 @@ const Header = () => {
           <Link to="/" className="font-bold text-lg">
             FloodShield Tamil Nadu
           </Link>
+          <span className="text-xs text-muted-foreground ml-2">(v1.1)</span>
         </div>
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1">
           {navLinks.map((link) => (
