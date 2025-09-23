@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ShieldCheck } from "lucide-react";
 import IssueManagement from "@/components/admin/IssueManagement";
 import AlertBroadcaster from "@/components/admin/AlertBroadcaster";
+import SiteSettings from "@/components/admin/SiteSettings";
 
 const Admin = () => {
   return (
@@ -16,6 +17,7 @@ const Admin = () => {
         </p>
       </div>
       
+      <SiteSettings />
       <AlertBroadcaster />
       <IssueManagement />
       
