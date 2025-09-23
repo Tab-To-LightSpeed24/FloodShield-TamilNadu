@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Map, Megaphone, Droplets } from "lucide-react";
+import { AlertTriangle, Map, Megaphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import RecentIssues from "@/components/RecentIssues";
 import DashboardMap from "@/components/DashboardMap";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import WeatherForecast from "@/components/WeatherForecast";
 
 const fetchActiveAlertsCount = async () => {
   const { count, error } = await supabase
@@ -74,18 +75,7 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-base font-semibold">
-                  <Droplets className="mr-2 h-5 w-5 text-cyan-500" />
-                  Rainfall Forecast
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">Light showers</div>
-                <p className="text-sm text-muted-foreground">Next 6 hours</p>
-              </CardContent>
-            </Card>
+            <WeatherForecast />
 
             <Card>
               <CardHeader>
