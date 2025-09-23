@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets, AlertCircle } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 const DEFAULT_LOCATION = "Chennai";
 
@@ -65,11 +66,14 @@ const WeatherForecast = () => {
         {data && !effectiveIsLoading && (
           <>
             <div className="text-2xl font-bold capitalize">
-              {data.weather[0].description}
+              {data.list?.[0]?.weather?.[0]?.description}
             </div>
             <p className="text-sm text-muted-foreground">
-              In {displayLocation}, for the next few hours
+              In {displayLocation}, for the next few hours.
             </p>
+            <Link to="/forecast" className="text-sm text-primary hover:underline mt-2 inline-block">
+              View detailed forecast &rarr;
+            </Link>
           </>
         )}
       </CardContent>
