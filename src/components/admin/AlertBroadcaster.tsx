@@ -34,29 +34,41 @@ const AlertBroadcaster = () => {
     const toastId = showLoading("Broadcasting alert...");
 
     try {
-      const promises = [];
+      const promisesWithTypes = [];
 
       if (sendSmsWhatsapp) {
-        promises.push(supabase.functions.invoke("send-bulk-alerts", {
-          body: { message },
-        }));
+        promisesWithTypes.push({
+          type: 'sms_whatsapp',
+          promise: supabase.functions.invoke("send-bulk-alerts", {
+            body: { message },
+          })
+        });
       }
 
       if (sendPushNotification) {
-        promises.push(supabase.functions.invoke("send-push-notifications", {
-          body: { title, message },
-        }));
+        promisesWithTypes.push({
+          type: 'push_notification',
+          promise: supabase.functions.invoke("send-push-notifications", {
+            body: { title, message },
+          })
+        });
       }
 
-      const results = await Promise.allSettled(promises);
+      const results = await Promise.allSettled(promisesWithTypes.map(p => p.promise));
 
       let successMessages: string[] = [];
       let errorMessages: string[] = [];
 
-      results.forEach((result, index) => {
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        const type = promisesWithTypes[i].type;
+
         if (result.status === 'fulfilled') {
-          if (index === 0 && sendSmsWhatsapp) successMessages.push(result.value.data.message || "SMS/WhatsApp alerts processed!");
-          else if (index === (sendSmsWhatsapp ? 1 : 0) && sendPushNotification) successMessages.push(result.value.data.message || "Push notifications processed!");
+          if (result.value.data && result.value.data.message) {
+            successMessages.push(result.value.data.message);
+          } else {
+            successMessages.push(`${type === 'sms_whatsapp' ? 'SMS/WhatsApp' : 'Push'} alerts processed!`);
+          }
         } else {
           const error = result.reason;
           let errorMessage = "An unknown error occurred.";
@@ -72,7 +84,7 @@ const AlertBroadcaster = () => {
           }
           errorMessages.push(errorMessage);
         }
-      });
+      }
 
       dismissToast(toastId);
       if (errorMessages.length > 0) {
@@ -125,7 +137,7 @@ const AlertBroadcaster = () => {
           <Label htmlFor="send-push-notification">Send Push Notification (Android)</Label>
         </div>
         <p className="text-sm text-muted-foreground -mt-2">
-          Requires `FCM_SERVER_KEY` secret to be configured in Supabase.
+          Requires `FCM_SERVICE_ACCOUNT_KEY` secret to be configured in Supabase.
         </p>
 
         {sendPushNotification && (

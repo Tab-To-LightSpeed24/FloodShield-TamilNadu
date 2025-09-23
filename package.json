@@ -50,6 +50,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
+    "jose": "^6.1.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "1.5.3",
     "lucide-react": "^0.462.0",
