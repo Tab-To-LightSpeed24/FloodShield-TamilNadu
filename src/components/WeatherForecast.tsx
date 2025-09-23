@@ -14,9 +14,11 @@ const fetchWeatherForecast = async () => {
   });
 
   if (error) {
-    // The function now returns a structured error, so we can access it directly
-    if (error.context && error.context.json) {
-        throw new Error(error.context.json.error || `Function invocation failed: ${error.message}`);
+    // For non-2xx responses, error.context is the original Response object.
+    // We need to await its JSON to get the detailed error message.
+    if (error.context && typeof error.context.json === 'function') {
+      const errorJson = await error.context.json();
+      throw new Error(errorJson.error || `Function returned an unhandled error.`);
     }
     throw new Error(`Function invocation failed: ${error.message}`);
   }
