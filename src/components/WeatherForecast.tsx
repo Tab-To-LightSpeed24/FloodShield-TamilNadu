@@ -14,16 +14,11 @@ const fetchWeatherForecast = async () => {
   });
 
   if (error) {
-    // Attempt to parse the error response from the function
-    try {
-      const errorJson = JSON.parse(error.context.responseText);
-      if (errorJson.error) {
-        throw new Error(errorJson.error);
-      }
-    } catch (e) {
-      // Fallback for generic errors
-      throw new Error(`Function invocation failed: ${error.message}`);
+    // The function now returns a structured error, so we can access it directly
+    if (error.context && error.context.json) {
+        throw new Error(error.context.json.error || `Function invocation failed: ${error.message}`);
     }
+    throw new Error(`Function invocation failed: ${error.message}`);
   }
   
   return data;
@@ -34,6 +29,7 @@ const WeatherForecast = () => {
     queryKey: ["weatherForecast"],
     queryFn: fetchWeatherForecast,
     staleTime: 10 * 60 * 1000, // Refetch every 10 minutes
+    retry: false, // Disable retries to see the specific error immediately
   });
 
   return (
@@ -42,7 +38,7 @@ const WeatherForecast = () => {
         <CardTitle className="flex items-center text-base font-semibold">
           <Droplets className="mr-2 h-5 w-5 text-cyan-500" />
           Rainfall Forecast
-        </CardTitle>
+        </Title>
       </CardHeader>
       <CardContent>
         {isLoading && (
