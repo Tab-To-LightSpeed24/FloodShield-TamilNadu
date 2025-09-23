@@ -56,8 +56,7 @@ const Profile = () => {
       if (!user) throw new Error("User not found");
       const { error } = await supabase
         .from("profiles")
-        .update(updatedProfile)
-        .eq("id", user.id);
+        .upsert({ ...updatedProfile, id: user.id });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
