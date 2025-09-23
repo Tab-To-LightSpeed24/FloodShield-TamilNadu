@@ -5,6 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Droplets } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import L from "leaflet";
 import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
 import ReactDOMServer from "react-dom/server";
