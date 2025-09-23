@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showSuccess } from "@/utils/toast";
 import { useProfile } from "@/hooks/useProfile";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Header = () => {
   const { session, user } = useAuth();
@@ -70,6 +71,7 @@ const Header = () => {
           )}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
+          <ThemeToggle />
           {session ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
