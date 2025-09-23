@@ -22,7 +22,6 @@ serve(async (req) => {
     let latitude = lat;
     let longitude = lng;
 
-    // If location string is provided and lat/lng are not, geocode it first.
     if (location && (!lat || !lng)) {
       const geocodeUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${apiKey}`;
       const geocodeResponse = await fetch(geocodeUrl);
@@ -41,23 +40,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Latitude and longitude or a location name are required." }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
-    const weatherResponse = await fetch(weatherUrl);
-    const responseBody = await weatherResponse.text();
+    // Switched to the 'forecast' endpoint to get 5-day/3-hour data
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+    const forecastResponse = await fetch(forecastUrl);
+    const responseBody = await forecastResponse.text();
 
-    if (!weatherResponse.ok) {
-      console.error(`OpenWeatherMap API error: ${weatherResponse.status}`, responseBody);
-      let errorMessage = `Failed to fetch weather data: ${weatherResponse.statusText}`;
+    if (!forecastResponse.ok) {
+      console.error(`OpenWeatherMap API error: ${forecastResponse.status}`, responseBody);
+      let errorMessage = `Failed to fetch weather data: ${forecastResponse.statusText}`;
       try {
         const errorJson = JSON.parse(responseBody);
         if (errorJson.message) errorMessage = `OpenWeatherMap API Error: ${errorJson.message}`;
       } catch (e) { /* ignore */ }
-      return new Response(JSON.stringify({ error: errorMessage }), { status: weatherResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: errorMessage }), { status: forecastResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     
-    const weatherData = JSON.parse(responseBody);
+    const forecastData = JSON.parse(responseBody);
 
-    return new Response(JSON.stringify(weatherData), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(forecastData), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error("Error in get-weather-forecast function:", error);

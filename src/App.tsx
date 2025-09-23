@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import { useAuth } from "./contexts/AuthContext";
 import { Skeleton } from "./components/ui/skeleton";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import DetailedForecast from "./pages/DetailedForecast";
 
 const ProtectedRoute = () => {
   const { session, loading } = useAuth();
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/report" element={<ReportIssue />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/my-reports" element={<MyReports />} />
+            <Route path="/forecast" element={<DetailedForecast />} />
           </Route>
 
           <Route element={<AdminProtectedRoute />}>

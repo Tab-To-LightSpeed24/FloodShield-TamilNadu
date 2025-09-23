@@ -1,4 +1,4 @@
-import { Shield, Menu, LogOut, LogIn, User as UserIcon, FileText, ShieldCheck } from "lucide-react";
+import { Shield, Menu, LogOut, LogIn, User as UserIcon, FileText, ShieldCheck, CloudSun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -37,7 +37,7 @@ const Header = () => {
   const navLinks = [
     { to: "/", label: "Dashboard" },
     { to: "/map", label: "Live Map" },
-    { to: "/report", label: "Report Issue" },
+    { to: "/forecast", label: "Forecast" },
     { to: "/alerts", label: "Alerts" },
   ];
 
@@ -60,6 +60,12 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+           <Link
+              to="/report"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Report Issue
+            </Link>
           {profile?.role === 'admin' && (
             <Link
               to="/admin"
@@ -146,6 +152,11 @@ const Header = () => {
                       </Link>
                     </SheetClose>
                   ))}
+                   <SheetClose asChild>
+                      <Link to="/report" className="transition-colors hover:bg-accent p-3 rounded-md">
+                        Report Issue
+                      </Link>
+                    </SheetClose>
                    {profile?.role === 'admin' && (
                     <SheetClose asChild>
                       <Link to="/admin" className="transition-colors hover:bg-accent p-3 rounded-md flex items-center">
