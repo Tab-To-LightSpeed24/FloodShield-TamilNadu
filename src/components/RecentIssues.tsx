@@ -15,18 +15,28 @@ import { formatDistanceToNow } from "date-fns";
 import { AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
-type Issue = {
+type IssueWithProfile = {
   id: string;
   created_at: string;
   issue_type: string;
   location: string;
   status: string;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
 };
 
-const fetchIssues = async (): Promise<Issue[]> => {
+const fetchIssues = async (): Promise<IssueWithProfile[]> => {
   const { data, error } = await supabase
     .from("issues")
-    .select("*")
+    .select(`
+      *,
+      profiles (
+        first_name,
+        last_name
+      )
+    `)
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -34,7 +44,7 @@ const fetchIssues = async (): Promise<Issue[]> => {
     throw new Error(error.message);
   }
 
-  return data;
+  return data as IssueWithProfile[];
 };
 
 const RecentIssues = () => {
@@ -43,7 +53,7 @@ const RecentIssues = () => {
     isLoading,
     isError,
     error,
-  } = useQuery<Issue[]>({
+  } = useQuery<IssueWithProfile[]>({
     queryKey: ["recentIssues"],
     queryFn: fetchIssues,
   });
@@ -108,10 +118,18 @@ const RecentIssues = () => {
                       <div className="text-sm text-muted-foreground sm:hidden">
                         {issue.location}
                       </div>
+                       <div className="text-sm text-muted-foreground md:hidden">
+                        By: {issue.profiles ? `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() : 'Anonymous'}
+                      </div>
                     </Link>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <Link to={`/issue/${issue.id}`} className="w-full h-full block">{issue.location}</Link>
+                    <Link to={`/issue/${issue.id}`} className="w-full h-full block">
+                      <div>{issue.location}</div>
+                      <div className="text-sm text-muted-foreground">
+                        By: {issue.profiles ? `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() : 'Anonymous'}
+                      </div>
+                    </Link>
                   </TableCell>
                   <TableCell>
                     <Link to={`/issue/${issue.id}`} className="w-full h-full block">

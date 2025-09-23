@@ -8,6 +8,8 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import MarkerClusterGroup from "@changey/react-leaflet-markercluster";
 import ReactDOMServer from "react-dom/server";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -41,19 +43,29 @@ type Issue = {
   description: string;
   lat: number;
   lng: number;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
 };
 
 const fetchAllIssues = async (): Promise<Issue[]> => {
   const { data, error } = await supabase
     .from("issues")
-    .select("*")
+    .select(`
+      *,
+      profiles (
+        first_name,
+        last_name
+      )
+    `)
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data.filter(issue => issue.lat && issue.lng);
+  return data.filter(issue => issue.lat && issue.lng) as Issue[];
 };
 
 const LiveMap = () => {
@@ -115,11 +127,12 @@ const LiveMap = () => {
                           {issue.issue_type.replace("-", " ")}
                         </div>
                         <div className="text-sm">{issue.location}</div>
-                        {issue.description && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {issue.description}
-                          </p>
-                        )}
+                        <div className="text-xs text-muted-foreground mt-1">
+                          By: {issue.profiles ? `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() : 'Anonymous'}
+                        </div>
+                        <Button asChild variant="link" className="p-0 h-auto mt-2 text-xs">
+                          <Link to={`/issue/${issue.id}`}>View Full Report</Link>
+                        </Button>
                       </Popup>
                     </Marker>
                   ))}
