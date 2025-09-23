@@ -16,17 +16,17 @@ const AlertBroadcaster = () => {
       return;
     }
     setIsSending(true);
-    const toastId = showLoading("Broadcasting alert...");
+    const toastId = showLoading("Broadcasting alert via SMS & WhatsApp...");
 
     try {
-      const { data, error } = await supabase.functions.invoke("send-bulk-sms", {
+      const { data, error } = await supabase.functions.invoke("send-bulk-alerts", {
         body: { message },
       });
 
       if (error) throw error;
 
       dismissToast(toastId);
-      showSuccess(data.message || "Alerts sent successfully!");
+      showSuccess(data.message || "Alerts broadcast processed!");
       setMessage("");
     } catch (error: any) {
       dismissToast(toastId);
@@ -50,9 +50,9 @@ const AlertBroadcaster = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Broadcast SMS Alert</CardTitle>
+        <CardTitle>Broadcast Alert</CardTitle>
         <CardDescription>
-          Send an SMS message to all users who have provided a phone number. This requires Twilio to be configured correctly in your Supabase secrets.
+          Send a message to all users with a phone number via SMS and WhatsApp. This requires Twilio secrets to be configured, including a new `TWILIO_WHATSAPP_NUMBER` for WhatsApp functionality.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

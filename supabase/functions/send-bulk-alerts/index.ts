@@ -39,13 +39,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Forbidden: User is not an admin' }), { status: 403, headers: corsHeaders })
     }
 
-    // Get the message from the request body
     const { message } = await req.json()
     if (!message || typeof message !== 'string' || message.trim() === '') {
-        return new Response(JSON.stringify({ error: 'Message is required and must be a non-empty string.' }), { status: 400, headers: corsHeaders })
+        return new Response(JSON.stringify({ error: 'Message is required.' }), { status: 400, headers: corsHeaders })
     }
 
-    // Get all users with phone numbers
     const { data: profilesWithPhones, error: profilesError } = await supabaseAdmin
       .from('profiles')
       .select('phone')
@@ -56,39 +54,56 @@ serve(async (req) => {
 
     const phoneNumbers = profilesWithPhones.map(p => p.phone).filter(Boolean);
     if (phoneNumbers.length === 0) {
-      return new Response(JSON.stringify({ message: "No users with phone numbers to send alerts to." }), { headers: { ...corsers, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ message: "No users with phone numbers to send alerts to." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Get Twilio credentials from environment variables
+    // Get Twilio credentials
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const smsFromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const whatsappFromNumber = Deno.env.get("TWILIO_WHATSAPP_NUMBER");
 
-    if (!accountSid || !authToken || !twilioPhoneNumber) {
-        console.error("Twilio credentials are not configured in Supabase secrets.");
+    if (!accountSid || !authToken) {
+        console.error("Twilio credentials are not configured.");
         return new Response(JSON.stringify({ error: "Server configuration error: Twilio is not set up." }), { status: 500, headers: corsHeaders })
     }
 
     const client = twilio(accountSid, authToken);
+    const allPromises = [];
 
-    // Send messages to all numbers
-    const messagePromises = phoneNumbers.map(number => {
-      return client.messages.create({
-        to: number,
-        from: twilioPhoneNumber,
-        body: message,
+    // Add SMS promises
+    if (smsFromNumber) {
+      phoneNumbers.forEach(number => {
+        allPromises.push(client.messages.create({ to: number, from: smsFromNumber, body: message }));
       });
-    });
+    }
 
-    await Promise.all(messagePromises);
+    // Add WhatsApp promises
+    if (whatsappFromNumber) {
+      phoneNumbers.forEach(number => {
+        allPromises.push(client.messages.create({ to: `whatsapp:${number}`, from: whatsappFromNumber, body: message }));
+      });
+    }
+
+    if (allPromises.length === 0) {
+      return new Response(JSON.stringify({ error: "No notification channels (SMS or WhatsApp) are configured in secrets." }), { status: 500, headers: corsHeaders });
+    }
+
+    const results = await Promise.allSettled(allPromises);
+    const successfulSends = results.filter(r => r.status === 'fulfilled').length;
+    const failedSends = results.filter(r => r.status === 'rejected').length;
+
+    if (failedSends > 0) {
+      console.error("Some messages failed to send:", results.filter(r => r.status === 'rejected'));
+    }
 
     return new Response(
-        JSON.stringify({ message: `Successfully sent alert to ${phoneNumbers.length} user(s).` }), 
+        JSON.stringify({ message: `Broadcast complete. Successful sends: ${successfulSends}. Failed: ${failedSends}.` }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error("Error in send-bulk-sms function:", error);
+    console.error("Error in send-bulk-alerts function:", error);
     return new Response(
         JSON.stringify({ error: error.message }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
