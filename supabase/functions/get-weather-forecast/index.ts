@@ -6,64 +6,61 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { lat, lng } = await req.json();
-    if (!lat || !lng) {
-      return new Response(
-        JSON.stringify({ error: "Latitude and longitude are required." }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
+    const { lat, lng, location } = await req.json();
     const apiKey = Deno.env.get("OPENWEATHERMAP_API_KEY");
+
     if (!apiKey) {
-      console.error("OPENWEATHERMAP_API_KEY not found in environment variables.");
-      return new Response(
-        JSON.stringify({ error: "Server configuration error: Weather API key is not set." }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.error("OPENWEATHERMAP_API_KEY not found.");
+      return new Response(JSON.stringify({ error: "Server configuration error." }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric`;
+    let latitude = lat;
+    let longitude = lng;
 
+    // If location string is provided and lat/lng are not, geocode it first.
+    if (location && (!lat || !lng)) {
+      const geocodeUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${apiKey}`;
+      const geocodeResponse = await fetch(geocodeUrl);
+      if (!geocodeResponse.ok) {
+        throw new Error("Failed to geocode location.");
+      }
+      const geocodeData = await geocodeResponse.json();
+      if (geocodeData.length === 0) {
+        return new Response(JSON.stringify({ error: `Could not find location: ${location}` }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      latitude = geocodeData[0].lat;
+      longitude = geocodeData[0].lon;
+    }
+
+    if (!latitude || !longitude) {
+      return new Response(JSON.stringify({ error: "Latitude and longitude or a location name are required." }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
     const weatherResponse = await fetch(weatherUrl);
-    const responseBody = await weatherResponse.text(); // Read body as text to handle both success and error cases
+    const responseBody = await weatherResponse.text();
 
     if (!weatherResponse.ok) {
-      console.error(`OpenWeatherMap API error: ${weatherResponse.status} ${weatherResponse.statusText}`, responseBody);
-      // Try to parse the error response from OpenWeatherMap
+      console.error(`OpenWeatherMap API error: ${weatherResponse.status}`, responseBody);
       let errorMessage = `Failed to fetch weather data: ${weatherResponse.statusText}`;
       try {
         const errorJson = JSON.parse(responseBody);
-        if (errorJson.message) {
-          errorMessage = `OpenWeatherMap API Error: ${errorJson.message}`;
-        }
-      } catch (e) {
-        // Ignore if parsing fails, use the original status text
-      }
-      return new Response(
-        JSON.stringify({ error: errorMessage }),
-        { status: weatherResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+        if (errorJson.message) errorMessage = `OpenWeatherMap API Error: ${errorJson.message}`;
+      } catch (e) { /* ignore */ }
+      return new Response(JSON.stringify({ error: errorMessage }), { status: weatherResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     
-    // If response is OK, parse the JSON and send it back
     const weatherData = JSON.parse(responseBody);
 
-    return new Response(
-      JSON.stringify(weatherData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify(weatherData), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
   } catch (error) {
-    console.error("Unhandled error in get-weather-forecast function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred." }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.error("Error in get-weather-forecast function:", error);
+    return new Response(JSON.stringify({ error: error.message || "An unexpected error occurred." }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 })

@@ -3,19 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets, AlertCircle } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Using Chennai as the default location for the forecast
-const DEFAULT_LAT = 13.0827;
-const DEFAULT_LNG = 80.2707;
+const DEFAULT_LOCATION = "Chennai";
 
-const fetchWeatherForecast = async () => {
+const fetchWeatherForecast = async (location: string) => {
   const { data, error } = await supabase.functions.invoke("get-weather-forecast", {
-    body: { lat: DEFAULT_LAT, lng: DEFAULT_LNG },
+    body: { location },
   });
 
   if (error) {
-    // For non-2xx responses, error.context is the original Response object.
-    // We need to await its JSON to get the detailed error message.
     if (error.context && typeof error.context.json === 'function') {
       const errorJson = await error.context.json();
       throw new Error(errorJson.error || `Function returned an unhandled error.`);
@@ -27,12 +25,21 @@ const fetchWeatherForecast = async () => {
 };
 
 const WeatherForecast = () => {
+  const { session } = useAuth();
+  const { data: profile, isLoading: isProfileLoading } = useProfile();
+
+  const location = (session && profile?.home_location) ? profile.home_location : DEFAULT_LOCATION;
+  const displayLocation = (session && profile?.home_location) ? profile.home_location.split(',')[0] : DEFAULT_LOCATION;
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["weatherForecast"],
-    queryFn: fetchWeatherForecast,
+    queryKey: ["weatherForecast", location],
+    queryFn: () => fetchWeatherForecast(location),
+    enabled: !isProfileLoading,
     staleTime: 10 * 60 * 1000, // Refetch every 10 minutes
-    retry: false, // Disable retries to see the specific error immediately
+    retry: false,
   });
+
+  const effectiveIsLoading = isLoading || isProfileLoading;
 
   return (
     <Card>
@@ -43,7 +50,7 @@ const WeatherForecast = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading && (
+        {effectiveIsLoading && (
           <div className="space-y-2">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
@@ -55,13 +62,13 @@ const WeatherForecast = () => {
             <p>{error.message}</p>
           </div>
         )}
-        {data && !isLoading && (
+        {data && !effectiveIsLoading && (
           <>
             <div className="text-2xl font-bold capitalize">
               {data.weather[0].description}
             </div>
             <p className="text-sm text-muted-foreground">
-              In Chennai, for the next few hours
+              In {displayLocation}, for the next few hours
             </p>
           </>
         )}
