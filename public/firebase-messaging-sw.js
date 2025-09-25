@@ -3,15 +3,16 @@ importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-comp
 
 // Initialize the Firebase app in the service worker by passing in
 // your app's Firebase config object.
-// https://firebase.google.com/docs/web/setup#config-object
+// IMPORTANT: You MUST replace these placeholders with the actual string values from your .env file.
+// For example, replace "YOUR_FIREBASE_API_KEY" with the value of VITE_FIREBASE_API_KEY from your .env
 const firebaseConfig = {
-  apiKey: "{{VITE_FIREBASE_API_KEY}}",
-  authDomain: "{{VITE_FIREBASE_AUTH_DOMAIN}}",
-  projectId: "{{VITE_FIREBASE_PROJECT_ID}}",
-  storageBucket: "{{VITE_FIREBASE_STORAGE_BUCKET}}",
-  messagingSenderId: "{{VITE_FIREBASE_MESSAGING_SENDER_ID}}",
-  appId: "{{VITE_FIREBASE_APP_ID}}",
-  measurementId: "{{VITE_FIREBASE_MEASUREMENT_ID}}"
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+  projectId: "YOUR_FIREBASE_PROJECT_ID",
+  storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+  appId: "YOUR_FIREBASE_APP_ID",
+  measurementId: "YOUR_FIREBASE_MEASUREMENT_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
