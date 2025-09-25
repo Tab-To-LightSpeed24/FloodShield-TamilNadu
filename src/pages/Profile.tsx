@@ -11,15 +11,27 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { showSuccess, showError, showLoading, dismissToast } from "@/utils/toast";
-import { User, Edit, MapPin } from "lucide-react";
+import { User, Edit, MapPin, Camera } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
+import { Separator } from "@/components/ui/separator";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const profileSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().optional(),
   phone: z.string().optional(),
   home_location: z.string().optional(),
+  avatar_file: z.any()
+    .optional()
+    .refine((files) => !files || files.length === 0 || files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 2MB.`)
+    .refine(
+      (files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      ".jpg, .jpeg, .png and .webp files are accepted."
+    ),
 });
 
 const ProfileInfoRow = ({ label, value }: { label: string; value: string | null | undefined }) => (
@@ -35,10 +47,14 @@ const Profile = () => {
   const { data: profile, isLoading } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, setValue, reset, watch } = useForm({
     resolver: zodResolver(profileSchema),
   });
+
+  const avatarFile = watch("avatar_file");
+  const previewAvatarUrl = avatarFile && avatarFile.length > 0 ? URL.createObjectURL(avatarFile[0]) : profile?.avatar_url;
 
   useEffect(() => {
     if (profile) {
@@ -47,6 +63,7 @@ const Profile = () => {
         last_name: profile.last_name || "",
         phone: profile.phone || "",
         home_location: profile.home_location || "",
+        avatar_file: undefined, // Reset file input
       };
       reset(defaultValues);
     }
@@ -95,10 +112,51 @@ const Profile = () => {
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedProfile: z.infer<typeof profileSchema>) => {
       if (!user) throw new Error("User not found");
+
+      let avatarUrl = profile?.avatar_url;
+
+      // Handle avatar upload if a file is provided
+      if (updatedProfile.avatar_file && updatedProfile.avatar_file.length > 0) {
+        const file = updatedProfile.avatar_file[0];
+        const filePath = `${user.id}/avatars/${Date.now()}-${file.name}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(`Avatar upload failed: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(filePath);
+        
+        avatarUrl = publicUrlData.publicUrl;
+
+        // Optionally delete old avatar if it exists and is not default
+        if (profile?.avatar_url && !profile.avatar_url.includes('googleusercontent.com')) {
+          const oldPath = profile.avatar_url.split('avatars/')[1];
+          if (oldPath) {
+            await supabase.storage.from('avatars').remove([`${user.id}/avatars/${oldPath}`]);
+          }
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .upsert({ ...updatedProfile, id: user.id });
-      if (error) throw new Error(error.message);
+        .upsert({ 
+          id: user.id,
+          first_name: updatedProfile.first_name,
+          last_name: updatedProfile.last_name,
+          phone: updatedProfile.phone,
+          home_location: updatedProfile.home_location,
+          avatar_url: avatarUrl,
+        });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
@@ -142,12 +200,34 @@ const Profile = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={profile?.avatar_url} alt={profile?.first_name || ""} />
-              <AvatarFallback>
-                <User className="h-10 w-10" />
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={previewAvatarUrl} alt={profile?.first_name || ""} />
+                <AvatarFallback>
+                  <User className="h-10 w-10" />
+                </AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    {...register("avatar_file")}
+                    accept="image/png, image/jpeg, image/webp"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
             <div>
               <CardTitle className="text-2xl">{profile?.first_name} {profile?.last_name}</CardTitle>
               <CardDescription>View and edit your personal information below.</CardDescription>
@@ -189,6 +269,7 @@ const Profile = () => {
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">Set a primary location for targeted alerts.</p>
               </div>
+              {errors.avatar_file && <p className="text-sm text-destructive mt-1">{errors.avatar_file.message}</p>}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" type="button" onClick={() => setIsEditing(false)}>Cancel</Button>
                 <Button type="submit" disabled={updateProfileMutation.isPending}>
@@ -205,6 +286,8 @@ const Profile = () => {
               <ProfileInfoRow label="Email" value={user?.email} />
               <ProfileInfoRow label="Phone Number" value={profile?.phone} />
               <ProfileInfoRow label="Home Location" value={profile?.home_location} />
+              <Separator />
+              <PushNotificationToggle />
               <Button onClick={() => setIsEditing(true)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Profile
