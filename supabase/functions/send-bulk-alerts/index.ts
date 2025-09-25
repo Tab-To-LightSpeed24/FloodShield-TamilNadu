@@ -76,9 +76,8 @@ serve(async (req) => {
       })
       .filter(Boolean) as string[]; // Filter out any nulls
 
-    if (phoneNumbers.length === 0) {
-      return new Response(JSON.stringify({ message: "No users with valid phone numbers to send alerts to." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
+    const channelsSent: string[] = [];
+    const allPromises = [];
 
     // Get Twilio credentials
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
@@ -88,14 +87,22 @@ serve(async (req) => {
 
     if (!accountSid || !authToken) {
         console.error("Twilio credentials are not configured.");
+        // Log to history even if Twilio isn't configured
+        await supabaseAdmin.from('alert_history').insert({
+          sender_id: user.id,
+          message: message,
+          channels_sent: [],
+          status: 'failed',
+          details: { error: "Twilio credentials not configured." }
+        });
         return new Response(JSON.stringify({ error: "Server configuration error: Twilio is not set up." }), { status: 500, headers: corsHeaders })
     }
 
     const client = twilio(accountSid, authToken);
-    const allPromises = [];
-
+    
     // Add SMS promises
     if (smsFromNumber) {
+      channelsSent.push('sms');
       phoneNumbers.forEach(number => {
         allPromises.push(client.messages.create({ to: number, from: smsFromNumber, body: message }));
       });
@@ -103,6 +110,7 @@ serve(async (req) => {
 
     // Add WhatsApp promises
     if (whatsappFromNumber) {
+      channelsSent.push('whatsapp');
       phoneNumbers.forEach(number => {
         // For WhatsApp, Twilio expects the number in the format 'whatsapp:+[number]'
         allPromises.push(client.messages.create({ to: `whatsapp:${number}`, from: `whatsapp:${whatsappFromNumber}`, body: message }));
@@ -110,12 +118,40 @@ serve(async (req) => {
     }
 
     if (allPromises.length === 0) {
+      // Log to history if no channels are configured
+      await supabaseAdmin.from('alert_history').insert({
+        sender_id: user.id,
+        message: message,
+        channels_sent: [],
+        status: 'failed',
+        details: { error: "No SMS or WhatsApp channels configured." }
+      });
       return new Response(JSON.stringify({ error: "No notification channels (SMS or WhatsApp) are configured in secrets." }), { status: 500, headers: corsHeaders });
     }
 
     const results = await Promise.allSettled(allPromises);
     const successfulSends = results.filter(r => r.status === 'fulfilled').length;
     const failedSends = results.filter(r => r.status === 'rejected').length;
+
+    let status = 'sent';
+    if (failedSends === allPromises.length) {
+      status = 'failed';
+    } else if (failedSends > 0) {
+      status = 'partial_success';
+    }
+
+    // Log to alert_history table
+    await supabaseAdmin.from('alert_history').insert({
+      sender_id: user.id,
+      message: message,
+      channels_sent: channelsSent,
+      status: status,
+      details: {
+        successful: successfulSends,
+        failed: failedSends,
+        errors: results.filter(r => r.status === 'rejected').map((r: any) => r.reason.message)
+      }
+    });
 
     if (failedSends > 0) {
       console.error("Some messages failed to send:", results.filter(r => r.status === 'rejected'));
@@ -128,6 +164,27 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in send-bulk-alerts function:", error);
+    // Attempt to log the error to alert_history if possible
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    const authHeader = req.headers.get('Authorization');
+    let senderId = null;
+    if (authHeader) {
+      const jwt = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabaseAdmin.auth.getUser(jwt);
+      senderId = user?.id;
+    }
+    
+    await supabaseAdmin.from('alert_history').insert({
+      sender_id: senderId,
+      message: req.body ? (await req.json()).message : 'N/A',
+      channels_sent: [],
+      status: 'failed',
+      details: { error: error.message || "An unexpected error occurred." }
+    });
+
     return new Response(
         JSON.stringify({ error: error.message }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

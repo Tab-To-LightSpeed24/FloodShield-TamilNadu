@@ -48,6 +48,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  let senderId: string | null = null;
+  let alertTitle: string | undefined;
+  let alertMessage: string | undefined;
+  let initialStatus = 'failed';
+  let initialDetails: any = {};
+
   try {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -57,11 +63,12 @@ serve(async (req) => {
     // Verify the calling user is an admin
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-        return new Response(JSON.stringify({ error: 'Missing authorization header' }), { status: 401, headers: corsHeaders })
+        throw new Error('Missing authorization header');
     }
     const jwt = authHeader.replace('Bearer ', '')
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt)
     if (userError) throw userError
+    senderId = user.id;
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
@@ -71,26 +78,27 @@ serve(async (req) => {
     if (profileError) throw profileError
     
     if (profile.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Forbidden: User is not an admin' }), { status: 403, headers: corsHeaders })
+      throw new Error('Forbidden: User is not an admin');
     }
 
     const { title, message } = await req.json()
+    alertTitle = title;
+    alertMessage = message;
+
     if (!title || !message || title.trim() === '' || message.trim() === '') {
-        return new Response(JSON.stringify({ error: 'Title and message are required.' }), { status: 400, headers: corsHeaders })
+        throw new Error('Title and message are required.');
     }
 
     const fcmServiceAccountKeyJson = Deno.env.get("FCM_SERVICE_ACCOUNT_KEY");
     if (!fcmServiceAccountKeyJson) {
-      console.error("FCM_SERVICE_ACCOUNT_KEY not found.");
-      return new Response(JSON.stringify({ error: "Server configuration error: FCM Service Account Key is not set." }), { status: 500, headers: corsHeaders });
+      throw new Error("Server configuration error: FCM Service Account Key is not set.");
     }
 
     let serviceAccountKey;
     try {
       serviceAccountKey = JSON.parse(fcmServiceAccountKeyJson);
     } catch (e) {
-      console.error("Failed to parse FCM_SERVICE_ACCOUNT_KEY:", e);
-      return new Response(JSON.stringify({ error: "Server configuration error: Invalid FCM Service Account Key format." }), { status: 500, headers: corsHeaders });
+      throw new Error("Server configuration error: Invalid FCM Service Account Key format.");
     }
 
     const accessToken = await getFCMToken(serviceAccountKey);
@@ -106,7 +114,17 @@ serve(async (req) => {
     const tokens = deviceTokens.map(dt => dt.token);
 
     if (tokens.length === 0) {
-      return new Response(JSON.stringify({ message: "No Android devices registered for push notifications." }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      initialStatus = 'sent'; // Consider it sent if no devices to send to
+      initialDetails = { message: "No Android devices registered for push notifications." };
+      await supabaseAdmin.from('alert_history').insert({
+        sender_id: senderId,
+        title: alertTitle,
+        message: alertMessage,
+        channels_sent: ['push'],
+        status: initialStatus,
+        details: initialDetails
+      });
+      return new Response(JSON.stringify(initialDetails), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${serviceAccountKey.project_id}/messages:send`;
@@ -141,7 +159,28 @@ serve(async (req) => {
 
     const results = await Promise.allSettled(notificationPromises);
     const successfulSends = results.filter(r => r.status === 'fulfilled' && !r.value.error).length;
-    const failedSends = results.filter(r => r.status === 'rejected' || r.value.error).length;
+    const failedSends = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error)).length;
+
+    let status = 'sent';
+    if (failedSends === notificationPromises.length) {
+      status = 'failed';
+    } else if (failedSends > 0) {
+      status = 'partial_success';
+    }
+
+    // Log to alert_history table
+    await supabaseAdmin.from('alert_history').insert({
+      sender_id: senderId,
+      title: alertTitle,
+      message: alertMessage,
+      channels_sent: ['push'],
+      status: status,
+      details: {
+        successful: successfulSends,
+        failed: failedSends,
+        errors: results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error)).map((r: any) => r.reason?.message || r.value.error)
+      }
+    });
 
     if (failedSends > 0) {
       console.error("Some push notifications failed to send:", results.filter(r => r.status === 'rejected' || r.value.error));
@@ -154,6 +193,21 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in send-push-notifications function:", error);
+    // Attempt to log the error to alert_history if possible
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    
+    await supabaseAdmin.from('alert_history').insert({
+      sender_id: senderId,
+      title: alertTitle,
+      message: alertMessage || (req.body ? (await req.json()).message : 'N/A'),
+      channels_sent: ['push'],
+      status: 'failed',
+      details: { error: error.message || "An unexpected error occurred." }
+    });
+
     return new Response(
         JSON.stringify({ error: error.message }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

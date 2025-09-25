@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 import IssueManagement from "@/components/admin/IssueManagement";
 import AlertBroadcaster from "@/components/admin/AlertBroadcaster";
 import SiteSettings from "@/components/admin/SiteSettings";
+import AlertHistory from "@/components/admin/AlertHistory"; // Import the new component
 
 const Admin = () => {
   return (
@@ -19,6 +20,7 @@ const Admin = () => {
       
       <SiteSettings />
       <AlertBroadcaster />
+      <AlertHistory /> {/* Add the new AlertHistory component here */}
       <IssueManagement />
       
     </div>
