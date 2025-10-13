@@ -88,7 +88,7 @@ const Header = () => {
                     <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.first_name || "User"} />
                     <AvatarFallback>
                       {profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
-                    </Fallback>
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
