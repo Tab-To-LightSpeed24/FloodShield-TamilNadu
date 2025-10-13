@@ -22,7 +22,6 @@ import { showSuccess } from "@/utils/toast";
 import { useProfile } from "@/hooks/useProfile";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "./ThemeToggle";
-import { version } from "../../../package.json";
 
 const Header = () => {
   const { session, user } = useAuth();
@@ -50,7 +49,7 @@ const Header = () => {
           <Link to="/" className="font-bold text-lg">
             FloodShield Tamil Nadu
           </Link>
-          <span className="text-xs text-muted-foreground ml-2">(v{version})</span>
+          <span className="text-xs text-muted-foreground ml-2">(v{import.meta.env.PACKAGE_VERSION})</span>
         </div>
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1">
           {navLinks.map((link) => (
