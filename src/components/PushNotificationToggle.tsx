@@ -7,21 +7,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getMessaging, getToken, deleteToken } from 'firebase/messaging';
 import { initializeApp } from 'firebase/app';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Firebase configuration (replace with your actual config)
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
+import { firebaseConfig, areAllFirebaseConfigValuesPresent } from '@/firebase-config';
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+let app;
+let messaging;
+if (areAllFirebaseConfigValuesPresent) {
+  try {
+    app = initializeApp(firebaseConfig);
+    messaging = getMessaging(app);
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+  }
+}
 
 const PushNotificationToggle = () => {
   const { user } = useAuth();
@@ -67,6 +65,10 @@ const PushNotificationToggle = () => {
       showError("You must be logged in to enable push notifications.");
       return;
     }
+    if (!messaging) {
+      showError("Push notification service is not available due to configuration issues.");
+      return;
+    }
 
     try {
       const permission = await Notification.requestPermission();
@@ -96,7 +98,7 @@ const PushNotificationToggle = () => {
   };
 
   const unsubscribeFromPushNotifications = async () => {
-    if (!user) return;
+    if (!user || !messaging) return;
 
     try {
       await deleteToken(messaging);
@@ -122,6 +124,14 @@ const PushNotificationToggle = () => {
       await unsubscribeFromPushNotifications();
     }
   };
+
+  if (!areAllFirebaseConfigValuesPresent) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        Push notifications are unavailable due to a missing configuration. Please contact support.
+      </div>
+    );
+  }
 
   if (!isSupported) {
     return (
