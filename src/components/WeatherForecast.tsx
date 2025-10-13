@@ -46,7 +46,7 @@ const WeatherForecast = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center text-base font-semibold">
-          <Droplets className="mr-2 h-5 w-5 text-cyan-500" />
+          <Droplets className="mr-2 h-5 w-5 text-primary" />
           Rainfall Forecast
         </CardTitle>
       </CardHeader>
