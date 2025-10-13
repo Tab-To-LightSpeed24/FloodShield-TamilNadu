@@ -22,6 +22,7 @@ import { showSuccess } from "@/utils/toast";
 import { useProfile } from "@/hooks/useProfile";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "./ThemeToggle";
+import { version } from "../../../package.json";
 
 const Header = () => {
   const { session, user } = useAuth();
@@ -49,7 +50,7 @@ const Header = () => {
           <Link to="/" className="font-bold text-lg">
             FloodShield Tamil Nadu
           </Link>
-          <span className="text-xs text-muted-foreground ml-2">(v1.1)</span>
+          <span className="text-xs text-muted-foreground ml-2">(v{version})</span>
         </div>
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium flex-1">
           {navLinks.map((link) => (
@@ -87,7 +88,7 @@ const Header = () => {
                     <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.first_name || "User"} />
                     <AvatarFallback>
                       {profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
-                    </AvatarFallback>
+                    </Fallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
