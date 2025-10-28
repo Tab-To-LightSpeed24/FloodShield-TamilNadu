@@ -51,11 +51,15 @@ const formSchema = z.object({
   lng: z.number().optional(),
 });
 
+type LocationStatus = 'idle' | 'validating' | 'valid' | 'invalid';
+
 const ReportIssue = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { isFloodSeasonActive } = useSiteConfig();
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const [validationMessage, setValidationMessage] = useState('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -92,14 +96,17 @@ const ReportIssue = () => {
           
           if (data && data.display_name) {
             form.setValue("location", data.display_name, { shouldValidate: true });
+            setLocationStatus('valid');
             showSuccess("Location and address captured!");
           } else {
             form.setValue("location", `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { shouldValidate: true });
+            setLocationStatus('valid');
             showSuccess("Location captured, but could not find a street address.");
           }
         } catch (error) {
           console.error("Reverse geocoding error:", error);
           form.setValue("location", `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, { shouldValidate: true });
+          setLocationStatus('valid');
           showError("Location captured, but failed to get address.");
         } finally {
           dismissToast(toastId);
@@ -125,6 +132,45 @@ const ReportIssue = () => {
         maximumAge: 0,
       }
     );
+  };
+
+  const handleLocationBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const locationValue = e.target.value;
+    if (locationValue.length < 5 || locationStatus === 'valid') {
+      return;
+    }
+
+    setLocationStatus('validating');
+    setValidationMessage('');
+    form.clearErrors("location");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("validate-location", {
+        body: { location: locationValue },
+      });
+
+      if (error) throw error;
+
+      if (data.isValid) {
+        setLocationStatus('valid');
+        setValidationMessage(`Location confirmed: ${data.displayName}`);
+        form.setValue('lat', data.lat);
+        form.setValue('lng', data.lng);
+        form.setValue('location', data.displayName, { shouldValidate: true });
+      } else {
+        setLocationStatus('invalid');
+        setValidationMessage(data.message);
+        form.setError("location", { type: "manual", message: data.message });
+        form.setValue('lat', undefined);
+        form.setValue('lng', undefined);
+      }
+    } catch (err: any) {
+      setLocationStatus('invalid');
+      const errorMessage = "Could not validate location at this time. Please try again or use GPS.";
+      setValidationMessage(errorMessage);
+      form.setError("location", { type: "manual", message: errorMessage });
+      console.error("Location validation error:", err);
+    }
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -251,6 +297,12 @@ const ReportIssue = () => {
                         <Input
                           placeholder="e.g., Near Meenakshi Amman Temple, Madurai"
                           {...field}
+                          onChange={(e) => {
+                            setLocationStatus('idle');
+                            form.clearErrors("location");
+                            field.onChange(e);
+                          }}
+                          onBlur={handleLocationBlur}
                         />
                          <Button
                           type="button"
@@ -265,7 +317,9 @@ const ReportIssue = () => {
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Provide a landmark or use the button to get your GPS location.
+                      {locationStatus === 'validating' && <span className="text-muted-foreground">Validating location...</span>}
+                      {locationStatus === 'valid' && <span className="text-green-600">{validationMessage}</span>}
+                      {locationStatus === 'idle' && "Provide a landmark or use the button to get your GPS location."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

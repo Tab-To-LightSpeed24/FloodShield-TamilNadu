@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Droplets } from "lucide-react";
+import { AlertCircle, Droplets, Info } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -132,7 +132,14 @@ const LiveMap = () => {
                 <p className="text-sm text-muted-foreground">{error?.message}</p>
               </div>
             )}
-            {displayedIssues && (
+            {displayedIssues && displayedIssues.length === 0 && isEmergencyModeActive && (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-md">
+                <Info className="h-8 w-8 mb-2 text-muted-foreground" />
+                <p className="font-semibold">Emergency Alert Mode is Active</p>
+                <p className="text-muted-foreground">No active flood reports have been submitted yet. The map will update as soon as flood-related issues are reported.</p>
+              </div>
+            )}
+            {displayedIssues && displayedIssues.length > 0 && (
               <MapContainer
                 center={[11.1271, 78.6569]}
                 zoom={7}
