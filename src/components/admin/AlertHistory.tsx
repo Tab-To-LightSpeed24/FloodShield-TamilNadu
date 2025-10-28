@@ -29,21 +29,21 @@ type AlertHistoryEntry = {
 };
 
 const fetchAlertHistory = async (): Promise<AlertHistoryEntry[]> => {
-  const { data, error } = await supabase
-    .from("alert_history")
-    .select(`
-      *,
-      profiles!alert_history_sender_id_fkey (
-        first_name,
-        last_name
-      )
-    `)
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc('get_alert_history_with_profiles');
 
   if (error) {
     throw new Error(error.message);
   }
-  return data as AlertHistoryEntry[];
+  
+  // The RPC returns a flat structure, so we need to map it back 
+  // to the nested structure the component expects.
+  return data.map((item: any) => ({
+    ...item,
+    profiles: {
+      first_name: item.profile_first_name,
+      last_name: item.profile_last_name,
+    }
+  })) as AlertHistoryEntry[];
 };
 
 const AlertHistory = () => {
