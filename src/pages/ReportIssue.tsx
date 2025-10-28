@@ -49,6 +49,9 @@ const formSchema = z.object({
     ),
   lat: z.number().optional(),
   lng: z.number().optional(),
+}).refine(data => !!data.lat && !!data.lng, {
+  message: "Location must be validated. Please use the GPS button or wait for the location to be confirmed after typing.",
+  path: ["location"],
 });
 
 type LocationStatus = 'idle' | 'validating' | 'valid' | 'invalid';
@@ -81,8 +84,8 @@ const ReportIssue = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        form.setValue("lat", latitude);
-        form.setValue("lng", longitude);
+        form.setValue("lat", latitude, { shouldValidate: true });
+        form.setValue("lng", longitude, { shouldValidate: true });
         
         dismissToast(toastId);
         toastId = showLoading("Looking up address...");
@@ -154,15 +157,15 @@ const ReportIssue = () => {
       if (data.isValid) {
         setLocationStatus('valid');
         setValidationMessage(`Location confirmed: ${data.displayName}`);
-        form.setValue('lat', data.lat);
-        form.setValue('lng', data.lng);
+        form.setValue('lat', data.lat, { shouldValidate: true });
+        form.setValue('lng', data.lng, { shouldValidate: true });
         form.setValue('location', data.displayName, { shouldValidate: true });
       } else {
         setLocationStatus('invalid');
         setValidationMessage(data.message);
         form.setError("location", { type: "manual", message: data.message });
-        form.setValue('lat', undefined);
-        form.setValue('lng', undefined);
+        form.setValue('lat', undefined, { shouldValidate: true });
+        form.setValue('lng', undefined, { shouldValidate: true });
       }
     } catch (err: any) {
       setLocationStatus('invalid');

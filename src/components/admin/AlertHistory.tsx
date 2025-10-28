@@ -33,7 +33,7 @@ const fetchAlertHistory = async (): Promise<AlertHistoryEntry[]> => {
     .from("alert_history")
     .select(`
       *,
-      profiles (
+      profiles!sender_id (
         first_name,
         last_name
       )
