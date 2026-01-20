@@ -21,7 +21,7 @@ Interactive real-time map showing flood-prone areas, safe shelters, water levels
 Detailed weather forecasts and flood risk predictions to help users and authorities stay prepared.
 
 ### 📢 Report Issue
-![Report Issue](public/myreports.png)
+![Report Issue](public/reportissue.png)
 Easy-to-use interface for citizens to report flood-related issues, distress signals, or infrastructure damage with geolocation support.
 
 ### 👮 Admin Panel
