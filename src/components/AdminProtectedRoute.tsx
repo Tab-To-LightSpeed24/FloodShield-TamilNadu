@@ -23,4 +23,4 @@ const AdminProtectedRoute = () => {
   return <Outlet />;
 };
 
-export default AdminProtectedRoute;
+export default AdminProtectedRoute; 

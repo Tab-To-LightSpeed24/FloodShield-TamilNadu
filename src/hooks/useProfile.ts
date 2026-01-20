@@ -36,4 +36,4 @@ export const useProfile = () => {
     queryFn: () => fetchProfile(user?.id),
     enabled: !!user,
   });
-};
+}; 

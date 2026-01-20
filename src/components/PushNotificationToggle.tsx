@@ -160,4 +160,4 @@ const PushNotificationToggle = () => {
   );
 };
 
-export default PushNotificationToggle;
+export default PushNotificationToggle; 

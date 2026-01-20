@@ -166,4 +166,4 @@ const IssueDetails = () => {
   );
 };
 
-export default IssueDetails;
+export default IssueDetails; 

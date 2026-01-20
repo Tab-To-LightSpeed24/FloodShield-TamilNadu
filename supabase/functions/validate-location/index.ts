@@ -53,4 +53,4 @@ serve(async (req) => {
     console.error("Error in validate-location function:", error);
     return new Response(JSON.stringify({ error: error.message || "An unexpected error occurred." }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-})
+}) 

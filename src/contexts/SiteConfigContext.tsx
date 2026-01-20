@@ -49,4 +49,4 @@ export const useSiteConfig = () => {
     throw new Error('useSiteConfig must be used within a SiteConfigProvider');
   }
   return context;
-};
+}; 

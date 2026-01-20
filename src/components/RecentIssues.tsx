@@ -160,4 +160,4 @@ const RecentIssues = () => {
   );
 };
 
-export default RecentIssues;
+export default RecentIssues; 

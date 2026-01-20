@@ -20,4 +20,4 @@ const EmergencyAlertBanner = () => {
   );
 };
 
-export default EmergencyAlertBanner;
+export default EmergencyAlertBanner; 

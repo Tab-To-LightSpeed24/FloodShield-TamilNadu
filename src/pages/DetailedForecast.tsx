@@ -184,4 +184,4 @@ const DetailedForecast = () => {
   );
 };
 
-export default DetailedForecast;
+export default DetailedForecast; 

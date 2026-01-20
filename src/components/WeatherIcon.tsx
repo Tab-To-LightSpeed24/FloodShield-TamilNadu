@@ -29,4 +29,4 @@ export const WeatherIcon: FC<WeatherIconProps> = ({ iconCode, ...props }) => {
   };
 
   return iconMap[iconCode] || <Sun {...props} />;
-};
+}; 

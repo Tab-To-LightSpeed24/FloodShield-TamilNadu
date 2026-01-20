@@ -54,4 +54,4 @@ const ProfileCompletionPrompt = () => {
   );
 };
 
-export default ProfileCompletionPrompt;
+export default ProfileCompletionPrompt; 

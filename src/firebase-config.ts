@@ -17,4 +17,4 @@ export const areAllFirebaseConfigValuesPresent =
 
 if (!areAllFirebaseConfigValuesPresent) {
     console.error("Firebase configuration is missing some required values. Push notifications will be disabled. Please check your .env file and ensure all VITE_FIREBASE_* variables are set.");
-}
+} 

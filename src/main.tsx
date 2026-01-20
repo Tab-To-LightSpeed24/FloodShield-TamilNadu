@@ -44,4 +44,4 @@ createRoot(document.getElementById("root")!).render(
       </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>
-);
+); 

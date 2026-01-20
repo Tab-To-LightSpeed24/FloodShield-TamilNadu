@@ -31,4 +31,4 @@ self.addEventListener('message', (event) => {
       self.registration.showNotification(notificationTitle, notificationOptions);
     });
   }
-});
+}); 
