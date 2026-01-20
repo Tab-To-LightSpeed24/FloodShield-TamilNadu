@@ -12,6 +12,10 @@ Access the application here: [https://flood-shield-tn.vercel.app/](https://flood
 ![Dashboard](public/dashboard.png)
 Overview of the current flood situation, alerts, and quick statistics at a glance.
 
+### ❗View Reported Issue
+![Report](public/report.png)
+View Report's full details including Image/Video attachment,location, reported citizen name, reported data, and location of report on map.
+
 ### 🗺️ Live Map
 ![Live Map](public/livemap.png)
 Interactive real-time map showing flood-prone areas, safe shelters, water levels, and live incident reports from the community.
